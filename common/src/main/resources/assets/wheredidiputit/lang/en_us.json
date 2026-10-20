@@ -43,5 +43,10 @@
   "gui.wheredidiputit.where.direction": "%1$s blocks %2$s",
   "gui.wheredidiputit.where.here": "right here",
   "key.category.wheredidiputit.main": "Where Did I Put It?",
-  "key.wheredidiputit.find": "Find hovered item"
+  "key.wheredidiputit.find": "Find hovered item",
+  "key.wheredidiputit.last_seen": "Show where an item was last seen",
+  "tooltip.wheredidiputit.hold": "Hold %s to see where it was last seen",
+  "tooltip.wheredidiputit.last_seen": "Last seen in: %s at %s, %s, %s",
+  "tooltip.wheredidiputit.last_seen.more": "%s (%s containers)",
+  "tooltip.wheredidiputit.never_seen": "Not seen in any remembered container here"
 }

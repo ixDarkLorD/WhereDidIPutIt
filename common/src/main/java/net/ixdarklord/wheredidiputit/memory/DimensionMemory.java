@@ -19,6 +19,8 @@ public final class DimensionMemory {
 
     private final Map<BlockPos, ContainerRecord> records = new HashMap<>();
     private boolean dirty;
+    // Counts changes, so what was worked out from the records can tell when it is out of date.
+    private int version;
 
     public @Nullable ContainerRecord get(BlockPos pos) {
         return this.records.get(pos);
@@ -30,16 +32,26 @@ public final class DimensionMemory {
 
     public void put(ContainerRecord record) {
         this.records.put(record.pos(), record);
-        this.dirty = true;
+        this.changed();
     }
 
     public void remove(BlockPos pos) {
-        if (this.records.remove(pos) != null) this.dirty = true;
+        if (this.records.remove(pos) != null) this.changed();
     }
 
     /** Forgets every container last opened before {@code cutoff} (milliseconds since the epoch). */
     public void forgetOlderThan(long cutoff) {
-        if (this.records.values().removeIf(record -> record.seenAt() < cutoff)) this.dirty = true;
+        if (this.records.values().removeIf(record -> record.seenAt() < cutoff)) this.changed();
+    }
+
+    /** Goes up whenever a record is added, replaced or removed. */
+    public int version() {
+        return this.version;
+    }
+
+    private void changed() {
+        this.dirty = true;
+        this.version++;
     }
 
     public boolean isDirty() {

@@ -10,3 +10,4 @@ This file is for listing all the changes to this project
 - **Recipe viewers**: the find key also works on items in JEI's and REI's lists, bookmarks and favorites, and in their recipe screens, when they're installed. Neither is required.
 - **Storage mods**: Applied Energistics 2, Refined Storage, Simple Storage Network and Tom's Simple Storage terminals are remembered with everything their network holds, and the find key works on the items in their grids. A search points to the terminal you used. All optional.
 - Containers are named by their screen title, so a chest renamed in an anvil shows its name.
+- **Last-seen tooltip**: hold Shift (rebindable) on an item to see where it was last seen: "Last seen in: Barrel at 6, -60, -7 (2 containers)". Items you've stored somewhere get a hint to hold it.

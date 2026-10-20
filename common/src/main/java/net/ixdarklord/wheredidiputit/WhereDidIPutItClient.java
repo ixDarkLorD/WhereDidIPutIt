@@ -7,6 +7,7 @@ import net.ixdarklord.wheredidiputit.client.render.ContainerHighlight;
 import net.ixdarklord.wheredidiputit.compat.refinedstorage.RefinedStorageTerminal;
 import net.ixdarklord.wheredidiputit.compat.rei.ReiCompat;
 import net.ixdarklord.wheredidiputit.find.FindKey;
+import net.ixdarklord.wheredidiputit.find.LastSeenTooltip;
 import net.ixdarklord.wheredidiputit.memory.ContainerMemory;
 import net.ixdarklord.wheredidiputit.memory.StorageTerminals;
 
@@ -19,6 +20,7 @@ public final class WhereDidIPutItClient implements ClientModConstructor {
     public void onConstructMod() {
         ContainerMemory.init();
         FindKey.init();
+        LastSeenTooltip.init();
         ContainerHighlight.init();
         TargetArrow.init();
         // JEI's plugin registers itself when JEI loads it; REI is asked directly.
