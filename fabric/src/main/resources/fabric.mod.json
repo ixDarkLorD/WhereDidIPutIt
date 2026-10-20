@@ -23,6 +23,9 @@
     ],
     "coolcatlib:client": [
       "net.ixdarklord.wheredidiputit.WhereDidIPutItClient"
+    ],
+    "jei_mod_plugin": [
+      "net.ixdarklord.wheredidiputit.compat.jei.WDIPIJeiPlugin"
     ]
   },
   "mixins": [

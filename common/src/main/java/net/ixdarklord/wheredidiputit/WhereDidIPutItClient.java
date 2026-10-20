@@ -1,8 +1,10 @@
 package net.ixdarklord.wheredidiputit;
 
 import net.ixdarklord.coolcatcore.api.core.ClientModConstructor;
+import net.ixdarklord.coolcatcore.api.platform.Platform;
 import net.ixdarklord.wheredidiputit.client.hud.TargetArrow;
 import net.ixdarklord.wheredidiputit.client.render.ContainerHighlight;
+import net.ixdarklord.wheredidiputit.compat.rei.ReiCompat;
 import net.ixdarklord.wheredidiputit.find.FindKey;
 import net.ixdarklord.wheredidiputit.memory.ContainerMemory;
 
@@ -17,5 +19,7 @@ public final class WhereDidIPutItClient implements ClientModConstructor {
         FindKey.init();
         ContainerHighlight.init();
         TargetArrow.init();
+        // JEI's plugin registers itself when JEI loads it; REI is asked directly.
+        if (Platform.isModLoaded(ReiCompat.MOD_ID)) ReiCompat.init();
     }
 }
