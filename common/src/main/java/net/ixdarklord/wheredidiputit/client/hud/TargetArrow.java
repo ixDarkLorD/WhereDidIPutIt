@@ -12,15 +12,17 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 /**
- * Arrows round the crosshair, one for each container being pointed out that is outside the view, in the highlight
- * color; arrows that would overlap fan apart (as in Why Can't I Sleep?'s {@code BlockerArrows}). A container in view
- * has its outline and its item marker instead.
+ * Arrows round the crosshair, one for each container being pointed out that isn't wholly inside the view, in the
+ * highlight color; arrows that would overlap fan apart (as in Why Can't I Sleep?'s {@code BlockerArrows}). A
+ * container wholly in view has only its outline and its item marker (author, 2026-10-21).
  */
 public final class TargetArrow {
     // Why Can't I Sleep?'s arrow, drawn by tools/gen_arrow_texture.ps1: two frames side by side, solid then hollow,
@@ -46,8 +48,9 @@ public final class TargetArrow {
         List<Arrow> arrows = new ArrayList<>();
         long now = Util.getMillis();
         for (ContainerHighlight.Target target : ContainerHighlight.current(minecraft.level)) {
+            if (fullyInView(minecraft, graphics, target.box())) continue;
             ScreenProjection on = ScreenProjection.of(minecraft, graphics, target.box().getCenter());
-            if (!on.inView()) arrows.add(new Arrow(on.angle(), target.alpha(now)));
+            arrows.add(new Arrow(on.angle(), target.alpha(now)));
         }
         if (arrows.isEmpty()) return;
         fanOut(arrows, SPACING / RADIUS);
@@ -65,6 +68,15 @@ public final class TargetArrow {
                     ARGB.color(Math.round(arrow.alpha * 255.0F), rgb));
             graphics.pose().popMatrix();
         }
+    }
+
+    // Whether every corner of the box is inside the view.
+    private static boolean fullyInView(Minecraft minecraft, GuiGraphicsExtractor graphics, AABB box) {
+        for (int i = 0; i < 8; i++) {
+            Vec3 corner = new Vec3((i & 1) == 0 ? box.minX : box.maxX, (i & 2) == 0 ? box.minY : box.maxY, (i & 4) == 0 ? box.minZ : box.maxZ);
+            if (!ScreenProjection.of(minecraft, graphics, corner).inView()) return false;
+        }
+        return true;
     }
 
     // Moves arrows closer than the spacing apart, evenly to both sides, so each one stays as near its true angle as it can.
