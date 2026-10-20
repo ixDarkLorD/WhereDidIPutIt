@@ -1,6 +1,11 @@
 package net.ixdarklord.wheredidiputit.client.render;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.blockentity.ChestRenderer;
+import net.minecraft.client.renderer.blockentity.state.ChestRenderState;
 import net.minecraft.client.model.geom.builders.UVPair;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
@@ -11,9 +16,15 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.CopperChestBlock;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
+import net.minecraft.world.level.block.entity.TrappedChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 import java.util.ArrayList;
@@ -21,8 +32,10 @@ import java.util.List;
 
 /**
  * The faces a container's ghost is drawn with: its block model's own quads, each with its texture, so the ghost looks
- * like the block. Blocks drawn by a block entity renderer (chests) have no model quads; they get a box of their shape
- * in their particle texture instead.
+ * like the block. Chests have no block model (a block entity renderer draws them): theirs is built from the game's
+ * own chest model parts (single, or the left and right halves of a double chest) posed as {@code ChestRenderer} poses
+ * them, in the chest's own texture. Any other block without model quads gets a box of its shape in its particle
+ * texture.
  * <p>
  * Each face names its sprite's own texture file ({@code textures/block/barrel_side.png}) with UVs inside it, not the
  * block atlas: CoolCatLib's world effects pass draws nothing with the atlas bound (tried 2026-10-21).
@@ -52,6 +65,11 @@ public final class ContainerGhost {
         for (BlockPos pos : positions) {
             if (!level.isLoaded(pos)) continue;
             BlockState state = level.getBlockState(pos);
+            if (state.getBlock() instanceof ChestBlock && level.getBlockEntity(pos) instanceof ChestBlockEntity chest) {
+                chest(faces, pos, state, chest);
+                modelled = true;
+                continue;
+            }
             BlockStateModel model = Minecraft.getInstance().getModelManager().getBlockStateModelSet().get(state);
             List<BlockStateModelPart> parts = new ArrayList<>();
             model.collectParts(RandomSource.create(state.getSeed(pos)), parts);
@@ -99,6 +117,62 @@ public final class ContainerGhost {
         return true;
     }
 
+    // A chest's ghost: the faces of its model's cubes (lid closed), in its texture, turned to its facing.
+    private static void chest(List<Face> faces, BlockPos pos, BlockState state, ChestBlockEntity chest) {
+        ChestType type = state.getValue(ChestBlock.TYPE);
+        ModelPart root = Minecraft.getInstance().getEntityModels().bakeLayer(ChestRenderer.LAYERS.select(type));
+        Identifier texture = texture(Sheets.chooseSprite(chestMaterial(state, chest), type).texture());
+        PoseStack poseStack = new PoseStack();
+        poseStack.translate(pos.getX(), pos.getY(), pos.getZ());
+        poseStack.mulPose(ChestRenderer.modelTransformation(state.getValue(ChestBlock.FACING)));
+        root.visit(poseStack, (pose, path, index, cube) -> {
+            for (ModelPart.Polygon polygon : cube.polygons) {
+                float[] u = new float[4];
+                float[] v = new float[4];
+                Vec3[] corners = new Vec3[4];
+                for (int i = 0; i < 4; i++) {
+                    ModelPart.Vertex vertex = polygon.vertices()[i];
+                    u[i] = vertex.u();
+                    v[i] = vertex.v();
+                    Vector3f at = pose.pose().transformPosition(vertex.worldX(), vertex.worldY(), vertex.worldZ(), new Vector3f());
+                    corners[i] = new Vec3(at.x(), at.y(), at.z());
+                }
+                Vector3f n = pose.transformNormal(polygon.normal(), new Vector3f());
+                Vec3 normal = new Vec3(n.x(), n.y(), n.z());
+                face(faces, corners, u, v, texture, normal);
+            }
+        });
+    }
+
+    // Which texture the chest renderer gives a chest.
+    private static ChestRenderState.ChestMaterialType chestMaterial(BlockState state, ChestBlockEntity chest) {
+        if (state.getBlock() instanceof CopperChestBlock copper) {
+            return switch (copper.getState()) {
+                case UNAFFECTED -> ChestRenderState.ChestMaterialType.COPPER_UNAFFECTED;
+                case EXPOSED -> ChestRenderState.ChestMaterialType.COPPER_EXPOSED;
+                case WEATHERED -> ChestRenderState.ChestMaterialType.COPPER_WEATHERED;
+                case OXIDIZED -> ChestRenderState.ChestMaterialType.COPPER_OXIDIZED;
+            };
+        }
+        if (ChestRenderer.xmasTextures()) return ChestRenderState.ChestMaterialType.CHRISTMAS;
+        return chest instanceof TrappedChestBlockEntity ? ChestRenderState.ChestMaterialType.TRAPPED : ChestRenderState.ChestMaterialType.REGULAR;
+    }
+
+    // A face from four corners and their UVs, put in UV order and lifted out along its normal.
+    private static void face(List<Face> faces, Vec3[] corners, float[] u, float[] v, Identifier texture, Vec3 normal) {
+        float u0 = Math.min(Math.min(u[0], u[1]), Math.min(u[2], u[3]));
+        float u1 = Math.max(Math.max(u[0], u[1]), Math.max(u[2], u[3]));
+        float v0 = Math.min(Math.min(v[0], v[1]), Math.min(v[2], v[3]));
+        float v1 = Math.max(Math.max(v[0], v[1]), Math.max(v[2], v[3]));
+        int a = corner(u, v, u0, v0);
+        int b = corner(u, v, u0, v1);
+        int c = corner(u, v, u1, v1);
+        int d = corner(u, v, u1, v0);
+        if (a < 0 || b < 0 || c < 0 || d < 0) return;
+        Vec3 lift = normal.scale(LIFT);
+        faces.add(new Face(corners[a].add(lift), corners[b].add(lift), corners[c].add(lift), corners[d].add(lift), texture, u0, v0, u1, v1, normal));
+    }
+
     private static int corner(float[] u, float[] v, float cu, float cv) {
         for (int i = 0; i < 4; i++) {
             if (Math.abs(u[i] - cu) < 1.0E-6F && Math.abs(v[i] - cv) < 1.0E-6F) return i;
@@ -112,8 +186,11 @@ public final class ContainerGhost {
 
     // A sprite's own texture file: minecraft:block/barrel_side is minecraft:textures/block/barrel_side.png.
     private static Identifier texture(TextureAtlasSprite sprite) {
-        Identifier name = sprite.contents().name();
-        return Identifier.fromNamespaceAndPath(name.getNamespace(), "textures/" + name.getPath() + ".png");
+        return texture(sprite.contents().name());
+    }
+
+    private static Identifier texture(Identifier sprite) {
+        return Identifier.fromNamespaceAndPath(sprite.getNamespace(), "textures/" + sprite.getPath() + ".png");
     }
 
     // The six faces of a box in one sprite, for blocks with no model of their own.

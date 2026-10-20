@@ -14,3 +14,4 @@ This file is for listing all the changes to this project
 - The highlight's outline has rounded corners and an even, smooth glow, through walls too.
 - **Find all**: G (rebindable) points out every container within range that holds the hovered item; F points out the nearest.
 - **Ghost and item marker**: a highlighted container behind walls shows as a see-through ghost of itself, and the item you searched for floats over it with its amount in the corner, as in a slot. They replace the action bar text.
+- Ghosts are pixel-sharp, and chests (single and double, normal, trapped and copper) show as themselves.

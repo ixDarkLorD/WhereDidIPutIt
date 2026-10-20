@@ -47,7 +47,8 @@ public final class ContainerHighlight {
     private static final VfxMaterial LINE = VfxMaterial.alpha(VfxMaterial.GLOW).withSoftness(0.0F).withShader(WhereDidIPutIt.id("vfx/outline_line"));
     private static final VfxMaterial DOT = VfxMaterial.alpha(VfxMaterial.GLOW).withSoftness(0.0F).withShader(WhereDidIPutIt.id("vfx/outline_dot"));
     private static final Identifier GHOST_SHADER = WhereDidIPutIt.id("vfx/ghost");
-    // One ghost material per texture: a material is a texture, a blend and a shader.
+    // One ghost material per texture: a material is a texture, a blend and a shader. Not smoothed, so block pixels stay
+    // crisp as on the block itself.
     private static final Map<Identifier, VfxMaterial> GHOSTS = new HashMap<>();
     private static final long FADE_IN_MILLIS = 150L;
     private static final long FADE_OUT_MILLIS = 700L;
@@ -115,7 +116,7 @@ public final class ContainerHighlight {
         for (ContainerGhost.Face face : faces) {
             // Only the faces turned to the camera: the far ones would show through the near ones.
             if (face.normal().dot(camera.subtract(face.center())) <= 0.0) continue;
-            VfxMaterial material = GHOSTS.computeIfAbsent(face.texture(), texture -> VfxMaterial.alpha(texture).withSoftness(0.0F).withShader(GHOST_SHADER));
+            VfxMaterial material = GHOSTS.computeIfAbsent(face.texture(), texture -> VfxMaterial.alpha(texture).withSoftness(0.0F).withSmoothing(false).withShader(GHOST_SHADER));
             frame.draw(material).quad(face.a(), face.b(), face.c(), face.d(), face.u0(), face.v0(), face.u1(), face.v1(), color);
         }
     }
