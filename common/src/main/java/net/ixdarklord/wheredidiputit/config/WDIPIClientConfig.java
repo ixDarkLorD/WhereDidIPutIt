@@ -32,8 +32,10 @@ public final class WDIPIClientConfig {
             .comment("The color of the glowing outline.").enabledWhen(ENABLED).build();
     public static final ConfigValue<Boolean> OFF_SCREEN_ARROW = BUILDER.bool("offScreenArrow", true)
             .comment("Draws an arrow around the crosshair pointing to the container when it is off-screen.").enabledWhen(ENABLED).build();
-    public static final ConfigValue<Boolean> ACTION_BAR_INFO = BUILDER.bool("actionBarInfo", true)
-            .comment("Says above the hotbar which container it is, how far and in which direction, and when you last saw the item there.").enabledWhen(ENABLED).build();
+    public static final ConfigValue<Boolean> ITEM_MARKER = BUILDER.bool("itemMarker", true)
+            .comment("Shows the item you searched for over each highlighted container, with how many of it are there.").enabledWhen(ENABLED).build();
+    public static final ConfigValue<Boolean> GHOST = BUILDER.bool("ghost", true)
+            .comment("Shows a see-through ghost of a highlighted container where walls hide it.").enabledWhen(ENABLED).build();
     static {
         BUILDER.pop();
         BUILDER.push("memory", "What is remembered about the containers you open.");
