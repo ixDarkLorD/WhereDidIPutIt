@@ -2,6 +2,7 @@ package net.ixdarklord.wheredidiputit;
 
 import net.ixdarklord.coolcatcore.api.core.ClientModConstructor;
 import net.ixdarklord.coolcatcore.api.platform.Platform;
+import net.ixdarklord.wheredidiputit.client.hud.ItemMarker;
 import net.ixdarklord.wheredidiputit.client.hud.TargetArrow;
 import net.ixdarklord.wheredidiputit.client.render.ContainerHighlight;
 import net.ixdarklord.wheredidiputit.compat.refinedstorage.RefinedStorageTerminal;
@@ -23,6 +24,7 @@ public final class WhereDidIPutItClient implements ClientModConstructor {
         LastSeenTooltip.init();
         ContainerHighlight.init();
         TargetArrow.init();
+        ItemMarker.init();
         // JEI's plugin registers itself when JEI loads it; REI is asked directly.
         if (Platform.isModLoaded(ReiCompat.MOD_ID)) ReiCompat.init();
         // Storage terminals whose mods have a loader-free jar; the others are registered by the loader modules.
