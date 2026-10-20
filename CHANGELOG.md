@@ -11,3 +11,4 @@ This file is for listing all the changes to this project
 - **Storage mods**: Applied Energistics 2, Refined Storage, Simple Storage Network and Tom's Simple Storage terminals are remembered with everything their network holds, and the find key works on the items in their grids. A search points to the terminal you used. All optional.
 - Containers are named by their screen title, so a chest renamed in an anvil shows its name.
 - **Last-seen tooltip**: hold Shift (rebindable) on an item to see where it was last seen: "Last seen in: Barrel at 6, -60, -7 (2 containers)". Items you've stored somewhere get a hint to hold it.
+- The highlight's outline has rounded corners and an even, smooth glow, through walls too.
