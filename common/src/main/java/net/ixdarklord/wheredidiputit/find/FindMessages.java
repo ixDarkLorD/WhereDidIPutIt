@@ -20,11 +20,15 @@ public final class FindMessages {
     /** What the player is shown for a hit, {@code index} of {@code total} (both counted from 0 and 1 as shown). */
     public static Component found(SearchHit hit, int index, int total, Vec3 from) {
         ContainerRecord record = hit.record();
-        Component block = record.label() != null ? record.label() : BuiltInRegistries.BLOCK.getValue(record.block()).getName();
-        Component line = Component.translatable("gui.wheredidiputit.found", block, where(Vec3.atCenterOf(record.pos()).subtract(from)),
+        Component line = Component.translatable("gui.wheredidiputit.found", name(record), where(Vec3.atCenterOf(record.pos()).subtract(from)),
                 hit.count(), ago(System.currentTimeMillis() - record.seenAt()));
         if (total > 1) line = Component.translatable("gui.wheredidiputit.found.cycle", line, index + 1, total);
         return line;
+    }
+
+    /** What a container is called: its screen's title, else its block's name. */
+    public static Component name(ContainerRecord record) {
+        return record.label() != null ? record.label() : BuiltInRegistries.BLOCK.getValue(record.block()).getName();
     }
 
     public static Component notFound(ItemStack query, int maxDistance) {
