@@ -14,8 +14,8 @@ import java.util.Map;
 
 /** The containers remembered in one dimension of one world or server. */
 public final class DimensionMemory {
-    /** Bumped when the file layout changes, so older files can be read differently. */
-    private static final int FORMAT = 1;
+    /** Bumped when the file layout changes, so older files can be read differently. 2: items carry a long count. */
+    private static final int FORMAT = 2;
 
     private final Map<BlockPos, ContainerRecord> records = new HashMap<>();
     private boolean dirty;
@@ -61,8 +61,9 @@ public final class DimensionMemory {
 
     public static DimensionMemory load(CompoundTag tag, RegistryOps<Tag> ops) {
         DimensionMemory memory = new DimensionMemory();
+        int format = tag.getIntOr("Format", 1);
         tag.getListOrEmpty("Containers").compoundStream()
-                .forEach(container -> ContainerRecord.load(container, ops).ifPresent(record -> memory.records.put(record.pos(), record)));
+                .forEach(container -> ContainerRecord.load(container, ops, format).ifPresent(record -> memory.records.put(record.pos(), record)));
         return memory;
     }
 }

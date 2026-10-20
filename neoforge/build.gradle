@@ -1,5 +1,14 @@
 apply from: "https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/gradle/v4/neoforge.gradle"
 
+// Refined Storage is published to its own Maven, which the shared scripts don't list.
+repositories {
+    maven {
+        name = "Refined Mods"
+        url = "https://maven.creeperhost.net/"
+        content { includeGroup "com.refinedmods.refinedstorage" }
+    }
+}
+
 dependencies {
     // CoolCatLib (NeoForge). Its common classes are inside this jar.
     implementation "net.ixdarklord.coolcatlib:coolcatlib-neoforge:${coolcatlib_version}"
@@ -11,4 +20,17 @@ dependencies {
     // Recipe viewers in a dev run only when asked (-Ptest_jei=true, -Ptest_rei=true), to try the find key on their entries.
     if (project.findProperty("test_jei") == "true") localRuntime "mezz.jei:jei-26.1.2-neoforge:${jei_version}"
     if (project.findProperty("test_rei") == "true") localRuntime "me.shedaniel:RoughlyEnoughItems-neoforge:${rei_version}"
+
+    // Optional storage mods whose terminal readers live here (compat/): AE2 and Simple Storage Network are NeoForge
+    // only, and Tom's has a jar per loader. -Ptest_<mod>=true runs them.
+    compileOnly("org.appliedenergistics:appliedenergistics2:${ae2_version}") { transitive = false }
+    compileOnly("maven.modrinth:simple-storage-network:${storage_network_version}") { transitive = false }
+    compileOnly("maven.modrinth:toms-storage:${toms_storage_version}") { transitive = false }
+    if (project.findProperty("test_ae2") == "true") localRuntime "org.appliedenergistics:appliedenergistics2:${ae2_version}"
+    if (project.findProperty("test_ssn") == "true") {
+        localRuntime("maven.modrinth:simple-storage-network:${storage_network_version}") { transitive = false }
+        localRuntime("maven.modrinth:flib:${flib_version}") { transitive = false }
+    }
+    if (project.findProperty("test_toms") == "true") localRuntime("maven.modrinth:toms-storage:${toms_storage_version}") { transitive = false }
+    if (project.findProperty("test_rs") == "true") localRuntime "com.refinedmods.refinedstorage:refinedstorage-neoforge:${refined_storage_version}"
 }

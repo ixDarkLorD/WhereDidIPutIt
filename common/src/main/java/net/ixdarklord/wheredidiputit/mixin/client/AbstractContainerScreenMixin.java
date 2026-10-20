@@ -3,7 +3,10 @@ package net.ixdarklord.wheredidiputit.mixin.client;
 import net.ixdarklord.wheredidiputit.find.FindKey;
 import net.ixdarklord.wheredidiputit.find.HoveredStacks;
 import net.ixdarklord.wheredidiputit.find.ScreenNotice;
+import net.ixdarklord.wheredidiputit.memory.StorageTerminals;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.KeyEvent;
@@ -13,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -40,9 +44,22 @@ public abstract class AbstractContainerScreenMixin extends Screen {
 
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
     private void wheredidiputit$onKeyPressed(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
-        // The slot first; with none, whatever a recipe viewer's overlay has under the mouse.
-        ItemStack hovered = this.hoveredSlot != null && this.hoveredSlot.hasItem() ? this.hoveredSlot.getItem() : HoveredStacks.fromViewers(this);
+        // A text field that takes typing gets the letter, as it would without the mod (some screens type into one
+        // through this method, such as storage terminals with a focused search box).
+        if (this.wheredidiputit$typing()) return;
+        // The slot first, then a storage terminal's own entries, then whatever a recipe viewer has under the mouse.
+        ItemStack hovered = this.hoveredSlot != null && this.hoveredSlot.hasItem() ? this.hoveredSlot.getItem() : ItemStack.EMPTY;
+        if (hovered.isEmpty()) hovered = StorageTerminals.hovered((AbstractContainerScreen<?>) (Object) this);
+        if (hovered.isEmpty()) hovered = HoveredStacks.fromViewers(this);
         if (FindKey.onKeyPressed(event, hovered)) cir.setReturnValue(true);
+    }
+
+    @Unique
+    private boolean wheredidiputit$typing() {
+        for (GuiEventListener child : this.children()) {
+            if (child instanceof EditBox box && box.canConsumeInput()) return true;
+        }
+        return false;
     }
 
     // extractContents, not extractRenderState: the recipe book screens draw their contents without the latter.

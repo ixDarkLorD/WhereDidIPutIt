@@ -19,7 +19,7 @@ public final class ContainerFinder {
         for (ContainerRecord record : memory.records()) {
             double distance = Vec3.atCenterOf(record.pos()).distanceTo(from);
             if (distance > maxDistance) continue;
-            int count = matcher.count(record.items());
+            long count = matcher.count(record.items());
             if (count > 0) hits.add(new SearchHit(record, count, distance));
         }
         hits.sort(Comparator.comparingDouble(SearchHit::distance));

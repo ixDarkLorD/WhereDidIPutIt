@@ -78,10 +78,16 @@ public final class ContainerHighlight {
         for (int i = 0; i < 8; i++) {
             corners[i] = new Vec3((i & 1) == 0 ? box.minX : box.maxX, (i & 2) == 0 ? box.minY : box.maxY, (i & 4) == 0 ? box.minZ : box.maxZ);
         }
-        // Each edge joins two corners that differ in one axis bit.
+        // Each edge joins two corners that differ in one axis bit. A beam is a flat ribbon turned to the camera that
+        // ends square at its points, so two meeting at a corner leave a notch there: each runs half its width past
+        // both corners, and the ribbons overlap into a closed corner.
         for (int i = 0; i < 8; i++) {
             for (int bit = 1; bit <= 4; bit <<= 1) {
-                if ((i & bit) == 0) draw.beam(corners[i], corners[i | bit], width, color);
+                if ((i & bit) != 0) continue;
+                Vec3 from = corners[i];
+                Vec3 to = corners[i | bit];
+                Vec3 overhang = to.subtract(from).normalize().scale(width / 2.0F);
+                draw.beam(from.subtract(overhang), to.add(overhang), width, color);
             }
         }
     }
