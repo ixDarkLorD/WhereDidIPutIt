@@ -15,3 +15,4 @@ This file is for listing all the changes to this project
 - **Find all**: G (rebindable) points out every container within range that holds the hovered item; F points out the nearest.
 - **Ghost and item marker**: a highlighted container behind walls shows as a see-through ghost of itself, and the item you searched for floats over it with its amount in the corner, as in a slot. They replace the action bar text.
 - Ghosts are pixel-sharp, and chests (single and double, normal, trapped and copper) show as themselves.
+- **Match modes**: the item tag mode matches items of the same kind (any log for an oak log) but leaves out tags about what items are used for, so a diamond no longer turns up iron. The tags it leaves out are a setting. The item shown over a container is the one found there.
