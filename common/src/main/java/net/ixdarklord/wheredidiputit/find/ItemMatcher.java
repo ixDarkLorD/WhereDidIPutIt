@@ -1,6 +1,7 @@
 package net.ixdarklord.wheredidiputit.find;
 
 import net.ixdarklord.wheredidiputit.config.MatchMode;
+import net.ixdarklord.wheredidiputit.memory.StoredItem;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
@@ -43,25 +44,26 @@ public final class ItemMatcher {
         return new ItemMatcher(test, nested);
     }
 
-    /** How many matching items the stacks hold, counting inside shulker boxes and bundles when asked to. */
-    public int count(List<ItemStack> stacks) {
-        int count = 0;
-        for (ItemStack stack : stacks) {
-            count += this.count(stack, 0);
+    /** How many matching items there are, counting inside shulker boxes and bundles when asked to. */
+    public long count(List<StoredItem> items) {
+        long count = 0;
+        for (StoredItem item : items) {
+            count += this.count(item.stack(), 0) * item.count();
         }
         return count;
     }
 
-    private int count(ItemStack stack, int depth) {
-        int count = this.test.test(stack) ? stack.getCount() : 0;
+    // How many matching items one of this stack holds (itself, or what is inside it).
+    private long count(ItemStack stack, int depth) {
+        long count = this.test.test(stack) ? 1 : 0;
         if (!this.nested || depth >= MAX_DEPTH) return count;
         ItemContainerContents container = stack.get(DataComponents.CONTAINER);
         if (container != null) {
-            count += container.nonEmptyItemCopyStream().mapToInt(inner -> this.count(inner, depth + 1)).sum() * stack.getCount();
+            count += container.nonEmptyItemCopyStream().mapToLong(inner -> this.count(inner, depth + 1) * inner.getCount()).sum();
         }
         BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
         if (bundle != null) {
-            count += bundle.itemCopyStream().mapToInt(inner -> this.count(inner, depth + 1)).sum() * stack.getCount();
+            count += bundle.itemCopyStream().mapToLong(inner -> this.count(inner, depth + 1) * inner.getCount()).sum();
         }
         return count;
     }

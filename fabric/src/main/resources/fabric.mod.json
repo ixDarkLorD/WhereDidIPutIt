@@ -22,7 +22,8 @@
       "net.ixdarklord.wheredidiputit.WhereDidIPutIt"
     ],
     "coolcatlib:client": [
-      "net.ixdarklord.wheredidiputit.WhereDidIPutItClient"
+      "net.ixdarklord.wheredidiputit.WhereDidIPutItClient",
+      "net.ixdarklord.wheredidiputit.fabric.WhereDidIPutItFabricClient"
     ],
     "jei_mod_plugin": [
       "net.ixdarklord.wheredidiputit.compat.jei.WDIPIJeiPlugin"

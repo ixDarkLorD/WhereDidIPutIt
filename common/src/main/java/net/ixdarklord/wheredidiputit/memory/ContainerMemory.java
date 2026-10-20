@@ -81,7 +81,7 @@ public final class ContainerMemory {
             } else if (!key.equals(record.pos())) {
                 // A chest placed beside it made it a double chest remembered under the other half: keep what it held.
                 gone.add(record.pos());
-                if (memory.get(key) == null) moved.add(new ContainerRecord(key, record.block(), record.seenAt(), record.items()));
+                if (memory.get(key) == null) moved.add(new ContainerRecord(key, record.block(), record.label(), record.seenAt(), record.items()));
             }
         }
         gone.forEach(memory::remove);
