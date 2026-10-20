@@ -77,7 +77,7 @@ public final class FindKey {
         // Nearest first, so the find key takes the first.
         List<SearchHit> shown = all ? hits : hits.subList(0, 1);
         if (WDIPIClientConfig.CLOSE_SCREEN_ON_SEARCH.get()) close(minecraft);
-        ContainerHighlight.show(level, shown.stream().map(hit -> new ContainerHighlight.Found(hit.record().pos(), query, hit.count())).toList());
+        ContainerHighlight.show(level, shown.stream().map(hit -> new ContainerHighlight.Found(hit.record().pos(), hit.shown().isEmpty() ? query : hit.shown(), hit.count())).toList());
     }
 
     private static void close(Minecraft minecraft) {

@@ -1,6 +1,7 @@
 package net.ixdarklord.wheredidiputit.find;
 
 import net.ixdarklord.wheredidiputit.config.MatchMode;
+import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
 import net.ixdarklord.wheredidiputit.memory.StoredItem;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.TagKey;
@@ -9,8 +10,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.BundleContents;
 import net.minecraft.world.item.component.ItemContainerContents;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /** Decides which stored stacks count as the item searched for, and how many of them a container holds. */
 public final class ItemMatcher {
@@ -36,12 +40,57 @@ public final class ItemMatcher {
             case EXACT -> stack -> ItemStack.isSameItemSameComponents(stack, copy);
             case IGNORE_DATA -> stack -> stack.getItem() == copy.getItem();
             case ITEM_TAG -> {
-                List<TagKey<Item>> tags = copy.typeHolder().tags().toList();
-                // An item in no tag has nothing to share: fall back to the item itself.
+                List<Pattern> ignored = WDIPIClientConfig.IGNORED_TAGS.get().stream().map(ItemMatcher::pattern).toList();
+                List<TagKey<Item>> tags = copy.typeHolder().tags().filter(tag -> !ignored(tag, ignored)).toList();
+                // An item in no tag left has nothing to share: fall back to the item itself.
                 yield stack -> stack.getItem() == copy.getItem() || tags.stream().anyMatch(stack.typeHolder()::is);
             }
         };
         return new ItemMatcher(test, nested);
+    }
+
+    /** The matching item there is most of, as a stack of one (what the item marker shows); empty if none matches. */
+    public ItemStack most(List<StoredItem> items) {
+        ItemStack best = ItemStack.EMPTY;
+        long bestCount = 0;
+        for (StoredItem item : items) {
+            if (this.test.test(item.stack()) && item.count() > bestCount) {
+                best = item.stack();
+                bestCount = item.count();
+            }
+        }
+        // Only inside shulker boxes or bundles: the first one found there.
+        if (best.isEmpty() && this.nested) {
+            for (StoredItem item : items) {
+                ItemStack inner = this.firstInside(item.stack(), 0);
+                if (!inner.isEmpty()) return inner;
+            }
+        }
+        return best.isEmpty() ? best : best.copyWithCount(1);
+    }
+
+    private ItemStack firstInside(ItemStack stack, int depth) {
+        if (depth >= MAX_DEPTH) return ItemStack.EMPTY;
+        ItemContainerContents container = stack.get(DataComponents.CONTAINER);
+        BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
+        List<ItemStack> inside = container != null ? container.nonEmptyItemCopyStream().toList() : bundle != null ? bundle.itemCopyStream().toList() : List.of();
+        for (ItemStack inner : inside) {
+            if (this.test.test(inner)) return inner.copyWithCount(1);
+            ItemStack deeper = this.firstInside(inner, depth + 1);
+            if (!deeper.isEmpty()) return deeper;
+        }
+        return ItemStack.EMPTY;
+    }
+
+    // A tag pattern from the config: * matches any part of a name, and a name without a namespace matches any.
+    private static Pattern pattern(String text) {
+        String regex = Arrays.stream(text.trim().split("\\*", -1)).map(Pattern::quote).collect(Collectors.joining(".*"));
+        return Pattern.compile(text.contains(":") ? regex : "[^:]*:" + regex);
+    }
+
+    private static boolean ignored(TagKey<Item> tag, List<Pattern> ignored) {
+        String id = tag.location().toString();
+        return ignored.stream().anyMatch(pattern -> pattern.matcher(id).matches());
     }
 
     /** How many matching items there are, counting inside shulker boxes and bundles when asked to. */

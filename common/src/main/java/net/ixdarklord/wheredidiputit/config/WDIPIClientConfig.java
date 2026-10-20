@@ -6,6 +6,8 @@ import net.ixdarklord.coolcatcore.api.config.ConfigScope;
 import net.ixdarklord.coolcatcore.api.config.ConfigValue;
 import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 
+import java.util.List;
+
 /** Each player's own preferences. */
 public final class WDIPIClientConfig {
     private static final ConfigBuilder BUILDER = Config.builder(WhereDidIPutIt.MOD_ID, ConfigScope.CLIENT)
@@ -20,6 +22,15 @@ public final class WDIPIClientConfig {
             .comment("Closes the open screen when you search, so you can see where the item is.").enabledWhen(ENABLED).build();
     public static final ConfigValue<MatchMode> MATCH_MODE = BUILDER.enumValue("matchMode", MatchMode.IGNORE_DATA)
             .comment("When a stored item counts as the one you search for: the exact item, the same item whatever its data (enchantments, name...), or any item sharing its tag (any log).").enabledWhen(ENABLED).build();
+    public static final ConfigValue<List<String>> IGNORED_TAGS = BUILDER.stringList("ignoredTags", List.of(
+                    "beacon_payment_items", "trim_materials", "trimmable_armor", "*_tool_materials", "repairs_*", "completes_find_tree_tutorial",
+                    "*_food", "*_tempt_items", "*_taming_items", "*_preferred_weapons", "*_disliked_weapons", "piglin_*", "ignored_by_piglin_babies",
+                    "villager_*", "*_dyes", "*_fuel", "*_books", "book_cloning_target", "noteblock_top_instruments", "decorated_pot_ingredients",
+                    "breaks_decorated_pots", "cluster_max_harvestables", "creeper_*", "dampens_vibrations", "duplicates_allays", "*_equipment",
+                    "*_wearables", "shearable_from_copper_golem", "smelts_to_glass", "soul_fire_base_blocks", "stone_crafting_materials",
+                    "non_flammable_wood", "cauldron_can_remove_dye", "panda_eats_from_ground", "c:hidden_from_recipe_viewers"))
+            .comment("Item tags the item tag match mode leaves out: they say what an item is used for, not what it is (beacon payments, tool materials, animal food...), so they would match unrelated items. A name without a namespace matches it in any namespace; * matches any part of a name.")
+            .enabledWhen(MATCH_MODE, mode -> mode == MatchMode.ITEM_TAG).build();
     public static final ConfigValue<Integer> MAX_SEARCH_DISTANCE = BUILDER.intValue("maxSearchDistance", 64)
             .range(8, 512).comment("How far away, in blocks, a remembered container can be found.").enabledWhen(ENABLED).build();
     static {
