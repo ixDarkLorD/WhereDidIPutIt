@@ -51,6 +51,8 @@ public final class TargetArrow {
         }
         if (arrows.isEmpty()) return;
         fanOut(arrows, SPACING / RADIUS);
+        // A layer of their own, so nothing drawn earlier on the HUD (the item markers' items) covers them.
+        graphics.nextStratum();
 
         int rgb = WDIPIClientConfig.HIGHLIGHT_COLOR.get() & 0xFFFFFF;
         float radius = RADIUS + 2.0F * Mth.sin(now / 160.0F);

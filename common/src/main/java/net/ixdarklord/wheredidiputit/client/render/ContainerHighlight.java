@@ -55,7 +55,7 @@ public final class ContainerHighlight {
     // Pushed out from the block a little, so the lines don't sit in its faces and flicker against them.
     private static final double INFLATE = 0.02;
     // How see-through the ghost is, and how much of the highlight color it takes on.
-    private static final float GHOST_ALPHA = 0.8F;
+    private static final float GHOST_ALPHA = 0.65F;
     private static final float GHOST_TINT = 0.15F;
 
     private static List<Target> targets = List.of();

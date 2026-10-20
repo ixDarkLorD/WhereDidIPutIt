@@ -23,8 +23,9 @@ public final class WhereDidIPutItClient implements ClientModConstructor {
         FindKey.init();
         LastSeenTooltip.init();
         ContainerHighlight.init();
-        TargetArrow.init();
+        // The marker before the arrows: HUD layers draw in the order they are registered, and arrows go on top.
         ItemMarker.init();
+        TargetArrow.init();
         // JEI's plugin registers itself when JEI loads it; REI is asked directly.
         if (Platform.isModLoaded(ReiCompat.MOD_ID)) ReiCompat.init();
         // Storage terminals whose mods have a loader-free jar; the others are registered by the loader modules.
