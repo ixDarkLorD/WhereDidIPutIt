@@ -21,9 +21,11 @@ import org.joml.Vector3fc;
  * highlight color. Once it is in view its outline is enough.
  */
 public final class TargetArrow {
-    // A white arrowhead pointing right, drawn by tools/gen_arrow_texture.py and tinted when drawn.
+    // Why Can't I Sleep?'s arrow, drawn by tools/gen_arrow_texture.ps1: two frames side by side, solid then hollow,
+    // white and grey so they take the highlight color. Only the solid one is drawn.
     private static final Identifier ARROW = WhereDidIPutIt.id("textures/gui/arrow.png");
     private static final int SIZE = 16;
+    private static final int SHEET_WIDTH = SIZE * 2;
     // How far from the crosshair the arrow sits, in GUI pixels.
     private static final float RADIUS = 32.0F;
 
@@ -62,7 +64,7 @@ public final class TargetArrow {
         graphics.pose().translate(graphics.guiWidth() / 2.0F, graphics.guiHeight() / 2.0F);
         graphics.pose().rotate(angle);
         graphics.pose().translate(radius, 0.0F);
-        graphics.blit(RenderPipelines.GUI_TEXTURED, ARROW, -SIZE / 2, -SIZE / 2, 0.0F, 0.0F, SIZE, SIZE, SIZE, SIZE,
+        graphics.blit(RenderPipelines.GUI_TEXTURED, ARROW, -SIZE / 2, -SIZE / 2, 0.0F, 0.0F, SIZE, SIZE, SHEET_WIDTH, SIZE,
                 ARGB.color(Math.round(alpha * 255.0F), WDIPIClientConfig.HIGHLIGHT_COLOR.get() & 0xFFFFFF));
         graphics.pose().popMatrix();
     }

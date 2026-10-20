@@ -10,8 +10,6 @@ import net.ixdarklord.wheredidiputit.memory.ContainerMemory;
 import net.ixdarklord.wheredidiputit.memory.DimensionMemory;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
@@ -55,18 +53,18 @@ public final class FindKey {
 
     /**
      * A key was pressed in a screen with {@code hovered} under the mouse; true when it was the find key and is used up.
-     * Called from {@code AbstractContainerScreenMixin}.
+     * Called from {@code AbstractContainerScreenMixin} and, for other screens, {@code KeyboardHandlerMixin}.
      */
-    public static boolean onKeyPressed(Screen screen, KeyEvent event, ItemStack hovered) {
+    public static boolean onKeyPressed(KeyEvent event, ItemStack hovered) {
         if (hovered.isEmpty() || !FIND.matches(event) || !WDIPIClientConfig.ENABLED.get()) return false;
         long now = Util.getMillis();
         if (now - lastPress < REPEAT_MILLIS) return true;
         lastPress = now;
-        find(Minecraft.getInstance(), screen, hovered);
+        find(Minecraft.getInstance(), hovered);
         return true;
     }
 
-    private static void find(Minecraft minecraft, Screen screen, ItemStack query) {
+    private static void find(Minecraft minecraft, ItemStack query) {
         LocalPlayer player = minecraft.player;
         ClientLevel level = minecraft.level;
         if (player == null || level == null) return;
@@ -97,16 +95,16 @@ public final class FindKey {
         SearchHit hit = hits.get(index);
         session = new Session(query.copy(), mode, level.dimension(), hit.record().pos());
 
-        if (WDIPIClientConfig.CLOSE_SCREEN_ON_SEARCH.get()) close(minecraft, screen);
+        if (WDIPIClientConfig.CLOSE_SCREEN_ON_SEARCH.get()) close(minecraft);
         ContainerHighlight.show(level, hit.record().pos());
         if (WDIPIClientConfig.ACTION_BAR_INFO.get()) {
             minecraft.gui.setOverlayMessage(FindMessages.found(hit, index, hits.size(), from), false);
         }
     }
 
-    private static void close(Minecraft minecraft, Screen screen) {
-        // A container screen closes through the player so the server closes the menu too.
-        if (screen instanceof AbstractContainerScreen<?> && minecraft.player != null) {
+    private static void close(Minecraft minecraft) {
+        // Through the player, so the server closes the open menu too, also when a recipe screen was opened over it.
+        if (minecraft.player != null) {
             minecraft.player.closeContainer();
         } else {
             minecraft.setScreen(null);

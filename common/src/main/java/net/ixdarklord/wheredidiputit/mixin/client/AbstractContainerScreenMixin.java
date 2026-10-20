@@ -1,6 +1,7 @@
 package net.ixdarklord.wheredidiputit.mixin.client;
 
 import net.ixdarklord.wheredidiputit.find.FindKey;
+import net.ixdarklord.wheredidiputit.find.HoveredStacks;
 import net.ixdarklord.wheredidiputit.find.ScreenNotice;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -39,8 +40,9 @@ public abstract class AbstractContainerScreenMixin extends Screen {
 
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
     private void wheredidiputit$onKeyPressed(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
-        ItemStack hovered = this.hoveredSlot != null ? this.hoveredSlot.getItem() : ItemStack.EMPTY;
-        if (FindKey.onKeyPressed(this, event, hovered)) cir.setReturnValue(true);
+        // The slot first; with none, whatever a recipe viewer's overlay has under the mouse.
+        ItemStack hovered = this.hoveredSlot != null && this.hoveredSlot.hasItem() ? this.hoveredSlot.getItem() : HoveredStacks.fromViewers(this);
+        if (FindKey.onKeyPressed(event, hovered)) cir.setReturnValue(true);
     }
 
     // extractContents, not extractRenderState: the recipe book screens draw their contents without the latter.
