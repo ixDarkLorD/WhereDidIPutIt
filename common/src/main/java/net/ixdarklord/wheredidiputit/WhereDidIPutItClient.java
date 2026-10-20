@@ -1,6 +1,9 @@
 package net.ixdarklord.wheredidiputit;
 
 import net.ixdarklord.coolcatcore.api.core.ClientModConstructor;
+import net.ixdarklord.wheredidiputit.client.hud.TargetArrow;
+import net.ixdarklord.wheredidiputit.client.render.ContainerHighlight;
+import net.ixdarklord.wheredidiputit.find.FindKey;
 import net.ixdarklord.wheredidiputit.memory.ContainerMemory;
 
 /**
@@ -11,5 +14,8 @@ public final class WhereDidIPutItClient implements ClientModConstructor {
     @Override
     public void onConstructMod() {
         ContainerMemory.init();
+        FindKey.init();
+        ContainerHighlight.init();
+        TargetArrow.init();
     }
 }
