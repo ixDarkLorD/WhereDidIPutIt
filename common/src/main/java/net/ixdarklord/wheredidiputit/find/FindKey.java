@@ -7,6 +7,9 @@ import net.ixdarklord.wheredidiputit.client.render.ContainerHighlight;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
 import net.ixdarklord.wheredidiputit.memory.ContainerMemory;
 import net.ixdarklord.wheredidiputit.memory.DimensionMemory;
+import net.ixdarklord.wheredidiputit.network.FindResultPayload;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.input.KeyEvent;
@@ -19,6 +22,10 @@ import net.minecraft.util.Util;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 
 /**
@@ -60,24 +67,78 @@ public final class FindKey {
     }
 
     private static void find(Minecraft minecraft, ItemStack query, boolean all) {
+        if (LiveSearch.usable()) {
+            LiveSearch.request(query, all);
+        } else {
+            findInMemory(minecraft, query, all);
+        }
+    }
+
+    /** Answers from memory alone: no server with the mod, live search off, or the server didn't answer. */
+    static void findInMemory(Minecraft minecraft, ItemStack query, boolean all) {
         LocalPlayer player = minecraft.player;
         ClientLevel level = minecraft.level;
         if (player == null || level == null) return;
-        DimensionMemory memory = ContainerMemory.dimension(level.dimension());
         int maxDistance = WDIPIClientConfig.MAX_SEARCH_DISTANCE.get();
+        List<Found> found = new ArrayList<>();
+        for (SearchHit hit : remembered(level, query, player.getEyePosition(), maxDistance)) {
+            found.add(new Found(hit.record().pos(), hit.shown(), hit.count(), hit.distance()));
+        }
+        show(minecraft, level, query, all, found, maxDistance);
+    }
+
+    /**
+     * Answers with what the server found round the player, which is up to date, and what is remembered beyond its
+     * radius. Storage terminals stay remembered results even within it: live search doesn't see into networks.
+     */
+    static void findWithLive(Minecraft minecraft, ItemStack query, boolean all, FindResultPayload answer) {
+        LocalPlayer player = minecraft.player;
+        ClientLevel level = minecraft.level;
+        if (player == null || level == null) return;
+        int maxDistance = WDIPIClientConfig.MAX_SEARCH_DISTANCE.get();
+        Vec3 eyes = player.getEyePosition();
+        List<Found> found = new ArrayList<>();
+        Set<BlockPos> live = new HashSet<>();
+        for (FindResultPayload.Hit hit : answer.hits()) {
+            double distance = Vec3.atCenterOf(hit.pos()).distanceTo(eyes);
+            if (distance > maxDistance) continue;
+            live.add(hit.pos());
+            found.add(new Found(hit.pos(), hit.shown(), hit.count(), distance));
+        }
+        for (SearchHit hit : remembered(level, query, eyes, maxDistance)) {
+            boolean beyond = hit.distance() > answer.radius();
+            if ((beyond || hit.record().network()) && !live.contains(hit.record().pos())) {
+                found.add(new Found(hit.record().pos(), hit.shown(), hit.count(), hit.distance()));
+            }
+        }
+        found.sort(Comparator.comparingDouble(Found::distance));
+        show(minecraft, level, query, all, found, maxDistance);
+    }
+
+    private static List<SearchHit> remembered(ClientLevel level, ItemStack query, Vec3 from, int maxDistance) {
+        DimensionMemory memory = ContainerMemory.dimension(level.dimension());
+        if (memory == null) return List.of();
         ItemMatcher matcher = ItemMatcher.of(query, WDIPIClientConfig.MATCH_MODE.get(), WDIPIClientConfig.INDEX_NESTED_CONTENTS.get());
-        List<SearchHit> hits = memory == null ? List.of() : ContainerFinder.search(memory, matcher, player.getEyePosition(), maxDistance);
-        if (hits.isEmpty()) {
+        return ContainerFinder.search(memory, matcher, from, maxDistance);
+    }
+
+    // Points out the containers found (nearest first), or says nothing has the item.
+    private static void show(Minecraft minecraft, ClientLevel level, ItemStack query, boolean all, List<Found> found, int maxDistance) {
+        if (found.isEmpty()) {
             Component message = FindMessages.notFound(query, maxDistance);
             minecraft.gui.setOverlayMessage(message, false);
             ScreenNotice.show(message);
             minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.NOTE_BLOCK_BASS.value(), 0.7F, 0.6F));
             return;
         }
-        // Nearest first, so the find key takes the first.
-        List<SearchHit> shown = all ? hits : hits.subList(0, 1);
+        List<Found> shown = all ? found : found.subList(0, 1);
         if (WDIPIClientConfig.CLOSE_SCREEN_ON_SEARCH.get()) close(minecraft);
-        ContainerHighlight.show(level, shown.stream().map(hit -> new ContainerHighlight.Found(hit.record().pos(), hit.shown().isEmpty() ? query : hit.shown(), hit.count())).toList());
+        ContainerHighlight.show(level, shown.stream()
+                .map(hit -> new ContainerHighlight.Found(hit.pos(), hit.item().isEmpty() ? query : hit.item(), hit.count())).toList());
+    }
+
+    // A container found, from memory or from the server.
+    private record Found(BlockPos pos, ItemStack item, long count, double distance) {
     }
 
     private static void close(Minecraft minecraft) {

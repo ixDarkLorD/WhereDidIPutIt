@@ -1,0 +1,23 @@
+package net.ixdarklord.wheredidiputit.network;
+
+import net.ixdarklord.coolcatcore.api.network.Network;
+import net.ixdarklord.wheredidiputit.find.LiveSearch;
+import net.ixdarklord.wheredidiputit.live.LiveSearchServer;
+import net.minecraft.server.level.ServerPlayer;
+
+/**
+ * The mod's payloads, registered from the common constructor on both sides. Clientbound handlers are lambdas into
+ * client classes, so a dedicated server never loads them.
+ */
+public final class WDIPINetwork {
+    private WDIPINetwork() {
+    }
+
+    public static void register() {
+        Network.registerClientbound(HelloPayload.class, (payload, context) -> context.queue(() -> LiveSearch.onHello(payload)));
+        Network.registerClientbound(FindResultPayload.class, (payload, context) -> context.queue(() -> LiveSearch.onResult(payload)));
+        Network.registerServerbound(FindRequestPayload.class, (payload, context) -> context.queue(() -> {
+            if (context.getPlayer() instanceof ServerPlayer player) LiveSearchServer.onRequest(player, payload);
+        }));
+    }
+}
