@@ -22,7 +22,7 @@ public final class ScreenStyle {
     public static final int DANGER = 0xFFE5534B;
     public static final int HEADER_HEIGHT = 24;
 
-    private static final int SHADOW = 0x70000000;
+    private static final int SHADOW = 0x38000000;
     private static final int PANEL_TOP = 0xF41A2029;
     private static final int PANEL_BOTTOM = 0xF40F1319;
     private static final int BORDER = 0xFF2F3743;
@@ -49,7 +49,7 @@ public final class ScreenStyle {
 
     /** The panel: a shadow, a body darkening downwards, a border and a faint shine along the top. */
     public static void panel(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
-        graphics.fill(x + 3, y + 4, x + width + 3, y + height + 4, SHADOW);
+        graphics.fill(x + 2, y + 2, x + width + 2, y + height + 2, SHADOW);
         RenderUtils.fillVerticalGradient(graphics, x, y, width, height, PANEL_TOP, PANEL_BOTTOM);
         graphics.outline(x, y, width, height, BORDER);
         graphics.fill(x + 1, y + 1, x + width - 1, y + 2, SHINE);
