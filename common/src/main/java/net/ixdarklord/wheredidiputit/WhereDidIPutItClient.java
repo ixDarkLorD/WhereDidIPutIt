@@ -15,6 +15,7 @@ import net.ixdarklord.wheredidiputit.find.FindKey;
 import net.ixdarklord.wheredidiputit.find.IgnoreKey;
 import net.ixdarklord.wheredidiputit.find.LiveSearch;
 import net.ixdarklord.wheredidiputit.find.LastSeenTooltip;
+import net.ixdarklord.wheredidiputit.find.SearchHistory;
 import net.ixdarklord.wheredidiputit.find.SortingHints;
 import net.ixdarklord.wheredidiputit.memory.ContainerMemory;
 import net.ixdarklord.wheredidiputit.memory.MemoryCommands;
@@ -35,6 +36,7 @@ public final class WhereDidIPutItClient implements ClientModConstructor {
         LiveSearch.init();
         LastSeenTooltip.init();
         SortingHints.init();
+        SearchHistory.init();
         ContainerHighlight.init();
         Guidance.init();
         // The marker before the arrows: HUD layers draw in the order they are registered, and arrows go on top.
