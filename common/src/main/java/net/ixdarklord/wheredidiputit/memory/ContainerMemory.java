@@ -74,14 +74,14 @@ public final class ContainerMemory {
         List<ContainerRecord> moved = new ArrayList<>();
         for (ContainerRecord record : memory.records()) {
             if (!level.isLoaded(record.pos())) continue;
-            BlockPos key = ContainerWatcher.keyOf(level, record.pos());
+            BlockPos key = ContainerKeys.keyOf(level, record.pos());
             boolean sameBlock = BuiltInRegistries.BLOCK.getKey(level.getBlockState(record.pos()).getBlock()).equals(record.block());
             if (key == null || !sameBlock) {
                 gone.add(record.pos());
             } else if (!key.equals(record.pos())) {
                 // A chest placed beside it made it a double chest remembered under the other half: keep what it held.
                 gone.add(record.pos());
-                if (memory.get(key) == null) moved.add(new ContainerRecord(key, record.block(), record.label(), record.seenAt(), record.items()));
+                if (memory.get(key) == null) moved.add(new ContainerRecord(key, record.block(), record.label(), record.seenAt(), record.items(), record.network()));
             }
         }
         gone.forEach(memory::remove);

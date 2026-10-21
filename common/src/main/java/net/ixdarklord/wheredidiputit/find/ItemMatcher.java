@@ -35,12 +35,20 @@ public final class ItemMatcher {
      * @param nested whether stacks inside shulker boxes and bundles count too
      */
     public static ItemMatcher of(ItemStack query, MatchMode mode, boolean nested) {
+        return of(query, mode, nested, WDIPIClientConfig.IGNORED_TAGS.get());
+    }
+
+    /**
+     * The same with the tags the item tag mode leaves out given: on the server they come from the client asking, as
+     * client settings aren't there.
+     */
+    public static ItemMatcher of(ItemStack query, MatchMode mode, boolean nested, List<String> ignoredTags) {
         ItemStack copy = query.copy();
         Predicate<ItemStack> test = switch (mode) {
             case EXACT -> stack -> ItemStack.isSameItemSameComponents(stack, copy);
             case IGNORE_DATA -> stack -> stack.getItem() == copy.getItem();
             case ITEM_TAG -> {
-                List<Pattern> ignored = WDIPIClientConfig.IGNORED_TAGS.get().stream().map(ItemMatcher::pattern).toList();
+                List<Pattern> ignored = ignoredTags.stream().map(ItemMatcher::pattern).toList();
                 List<TagKey<Item>> tags = copy.typeHolder().tags().filter(tag -> !ignored(tag, ignored)).toList();
                 // An item in no tag left has nothing to share: fall back to the item itself.
                 yield stack -> stack.getItem() == copy.getItem() || tags.stream().anyMatch(stack.typeHolder()::is);

@@ -3,6 +3,8 @@ package net.ixdarklord.wheredidiputit;
 import net.ixdarklord.coolcatcore.api.core.ModConstructor;
 import net.ixdarklord.coolcatcore.api.platform.Platform;
 import net.ixdarklord.wheredidiputit.config.WDIPIConfigs;
+import net.ixdarklord.wheredidiputit.live.LiveSearchServer;
+import net.ixdarklord.wheredidiputit.network.WDIPINetwork;
 import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +25,8 @@ public final class WhereDidIPutIt implements ModConstructor {
         LOGGER.info("Loading {} on {}", MOD_NAME, Platform.isFabric() ? "Fabric" : "NeoForge");
 
         WDIPIConfigs.register();
+        WDIPINetwork.register();
+        LiveSearchServer.init();
     }
 
     public static Identifier id(String path) {

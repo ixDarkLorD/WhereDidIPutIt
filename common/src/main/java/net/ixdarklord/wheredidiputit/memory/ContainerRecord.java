@@ -23,19 +23,22 @@ import java.util.Optional;
  * inside keep their own contents; whether a search looks into them is decided when searching. A storage network's
  * terminal is remembered the same way, with everything the network showed.
  *
- * @param pos    the container's position; a double chest's lower half (see {@link ContainerWatcher#keyOf})
- * @param block  the block's id, to notice when it is replaced by something else
- * @param label  the title of its screen ("Large Chest", a name given in an anvil, "ME Terminal"); null for none
- * @param seenAt when it was last opened, in milliseconds since the epoch
- * @param items  what it held
+ * @param pos     the container's position; a double chest's lower half (see {@link ContainerKeys#keyOf})
+ * @param block   the block's id, to notice when it is replaced by something else
+ * @param label   the title of its screen ("Large Chest", a name given in an anvil, "ME Terminal"); null for none
+ * @param seenAt  when it was last opened, in milliseconds since the epoch
+ * @param items   what it held
+ * @param network whether it is a storage mod's terminal, holding what its network showed: live search can't see into
+ *                networks, so these stay remembered results even where the server answers
  */
-public record ContainerRecord(BlockPos pos, Identifier block, @Nullable Component label, long seenAt, List<StoredItem> items) {
+public record ContainerRecord(BlockPos pos, Identifier block, @Nullable Component label, long seenAt, List<StoredItem> items, boolean network) {
     public CompoundTag save(RegistryOps<Tag> ops) {
         CompoundTag tag = new CompoundTag();
         tag.putIntArray("Pos", new int[]{this.pos.getX(), this.pos.getY(), this.pos.getZ()});
         tag.putString("Block", this.block.toString());
         if (this.label != null) ComponentSerialization.CODEC.encodeStart(ops, this.label).ifSuccess(label -> tag.put("Label", label));
         tag.putLong("SeenAt", this.seenAt);
+        if (this.network) tag.putBoolean("Network", true);
         ListTag items = new ListTag();
         for (StoredItem item : this.items) {
             ItemStack.CODEC.encodeStart(ops, item.stack()).ifSuccess(stack -> {
@@ -71,7 +74,8 @@ public record ContainerRecord(BlockPos pos, Identifier block, @Nullable Componen
                 ItemStack.CODEC.parse(ops, stack).ifSuccess(parsed -> items.add(new StoredItem(parsed, count)));
             }
         }
-        return Optional.of(new ContainerRecord(new BlockPos(pos[0], pos[1], pos[2]), block, label, tag.getLongOr("SeenAt", 0L), List.copyOf(items)));
+        return Optional.of(new ContainerRecord(new BlockPos(pos[0], pos[1], pos[2]), block, label, tag.getLongOr("SeenAt", 0L), List.copyOf(items),
+                tag.getBooleanOr("Network", false)));
     }
 
     /** The ops records are written with: NBT, resolving item and component ids against the connection's registries. */

@@ -8,6 +8,7 @@ import net.ixdarklord.wheredidiputit.client.render.ContainerHighlight;
 import net.ixdarklord.wheredidiputit.compat.refinedstorage.RefinedStorageTerminal;
 import net.ixdarklord.wheredidiputit.compat.rei.ReiCompat;
 import net.ixdarklord.wheredidiputit.find.FindKey;
+import net.ixdarklord.wheredidiputit.find.LiveSearch;
 import net.ixdarklord.wheredidiputit.find.LastSeenTooltip;
 import net.ixdarklord.wheredidiputit.memory.ContainerMemory;
 import net.ixdarklord.wheredidiputit.memory.StorageTerminals;
@@ -21,6 +22,7 @@ public final class WhereDidIPutItClient implements ClientModConstructor {
     public void onConstructMod() {
         ContainerMemory.init();
         FindKey.init();
+        LiveSearch.init();
         LastSeenTooltip.init();
         ContainerHighlight.init();
         // The marker before the arrows: HUD layers draw in the order they are registered, and arrows go on top.

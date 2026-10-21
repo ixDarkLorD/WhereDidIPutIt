@@ -15,11 +15,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.ChestBlock;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.EnderChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.ChestType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -71,7 +67,7 @@ public final class ContainerWatcher {
         usedPos = null;
         if (pos == null || minecraft.level == null || Util.getMillis() - usedAt > USE_WINDOW_MILLIS) return;
         if (minecraft.level.dimension() != usedDimension) return;
-        BlockPos key = keyOf(minecraft.level, pos);
+        BlockPos key = ContainerKeys.keyOf(minecraft.level, pos);
         if (key == null) return;
         watched = screen;
         watchedPos = key;
@@ -88,8 +84,9 @@ public final class ContainerWatcher {
         if (screen == null || pos == null || minecraft.player == null || minecraft.level == null) return;
         if (minecraft.level.dimension() != dimension || !WDIPIClientConfig.ENABLED.get()) return;
         // Broken while it was open: nothing to remember, and the old record goes with the block.
-        if (keyOf(minecraft.level, pos) == null) return;
+        if (ContainerKeys.keyOf(minecraft.level, pos) == null) return;
 
+        boolean network = StorageTerminals.of(screen) != null;
         List<StoredItem> items = contents(screen, minecraft.player.getInventory());
         // A screen with only the player's own slots stores nothing (a block that opens some other menu).
         if (items == null) return;
@@ -97,7 +94,7 @@ public final class ContainerWatcher {
         BlockState state = minecraft.level.getBlockState(pos);
         Component title = screen.getTitle();
         Component label = title.getString().isBlank() ? null : title.copy();
-        ContainerRecord record = new ContainerRecord(pos, BuiltInRegistries.BLOCK.getKey(state.getBlock()), label, System.currentTimeMillis(), List.copyOf(items));
+        ContainerRecord record = new ContainerRecord(pos, BuiltInRegistries.BLOCK.getKey(state.getBlock()), label, System.currentTimeMillis(), List.copyOf(items), network);
         ContainerMemory.record(dimension, record);
     }
 
@@ -121,22 +118,6 @@ public final class ContainerWatcher {
             if (!stack.isEmpty()) items.add(StoredItem.of(stack));
         }
         return hasContainerSlots ? items : null;
-    }
-
-    /**
-     * The position a container is remembered under, or {@code null} if the block there isn't one. A double chest is one
-     * container, remembered under the lower of its two halves' positions so either half finds the same record.
-     */
-    public static @Nullable BlockPos keyOf(Level level, BlockPos pos) {
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        // An ender chest's contents are the player's own wherever it is opened, not stored in the block.
-        if (blockEntity == null || blockEntity instanceof EnderChestBlockEntity) return null;
-        BlockState state = level.getBlockState(pos);
-        if (state.getBlock() instanceof ChestBlock && state.getValue(ChestBlock.TYPE) != ChestType.SINGLE) {
-            BlockPos other = pos.relative(ChestBlock.getConnectedDirection(state));
-            if (level.getBlockState(other).is(state.getBlock())) return pos.compareTo(other) <= 0 ? pos.immutable() : other;
-        }
-        return pos.immutable();
     }
 
     private static boolean isPlayerInventory(AbstractContainerScreen<?> screen) {
