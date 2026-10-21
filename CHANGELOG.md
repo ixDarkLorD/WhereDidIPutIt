@@ -19,3 +19,9 @@ This file is for listing all the changes to this project
 - **Live search**: on a server with the mod (and in singleplayer), the find keys ask the server, which looks in the real containers round you, so results are always up to date, even for containers you never opened. The server decides how far and how often, skips containers you couldn't open (locked, protected, unlooted) and only says where the item is and how much, never what else a container holds. Without it, or if the server says no, searches use what you remember.
 - On NeoForge, the mod no longer stops you joining servers that don't have it, even servers without CoolCatLib (needs the matching CoolCatLib).
 - Ghosts are drawn by the game's own renderers with your camera and then made see-through as a whole, so they look like the real block from every side and up close: no inside or back faces show through, and nothing warps. They're unshaded and full bright, so they're easy to see through walls.
+- **Search screen** (Y): find any remembered item by name, `#tag` or `@mod`, without holding or hovering it. Left click shows the nearest container, right click all of them.
+- **Container browser** (K): every remembered container here, nearest first, searchable by name or contents, with what each held, and buttons to show it, skip it in searches, or forget it.
+- **Skipping containers**: leave a container (a trash chest, a farm's output) out of searches with the browser or a key (unbound by default) while it's open. It's still remembered.
+- The item marker says how long ago a remembered container was last seen ("2m ago"), as what it holds may have changed since. It can be turned off.
+- The last-seen tooltip says how many of the item are stored in all: "(412 in 2 containers)".
+- A container you break is forgotten, and stops being highlighted, the moment the server confirms it.

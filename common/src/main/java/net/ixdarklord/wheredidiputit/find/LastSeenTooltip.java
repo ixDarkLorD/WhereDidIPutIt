@@ -22,8 +22,9 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * The tooltip line saying where an item was last seen: "Last seen in: Chest at 120, 64, -30 (3 containers)", the
- * container that most recently held it in the player's dimension, while the tooltip key (Shift) is held. Without the
+ * The tooltip line saying where an item was last seen: "Last seen in: Chest at 120, 64, -30 (412 in 3 containers)",
+ * the container that most recently held it in the player's dimension and how many of it are stored there in all,
+ * while the tooltip key (Shift) is held. Without the
  * key an item that is remembered somewhere gets a hint to hold it. Searching every tooltip frame would be wasteful, so
  * the last answer is kept until the item, the settings or the remembered containers change.
  */
@@ -57,7 +58,9 @@ public final class LastSeenTooltip {
         }
         BlockPos pos = answer.latest.pos();
         Component line = Component.translatable("tooltip.wheredidiputit.last_seen", FindMessages.name(answer.latest), pos.getX(), pos.getY(), pos.getZ());
-        if (answer.containers > 1) line = Component.translatable("tooltip.wheredidiputit.last_seen.more", line, answer.containers);
+        line = answer.containers > 1
+                ? Component.translatable("tooltip.wheredidiputit.last_seen.more", line, answer.total, answer.containers)
+                : Component.translatable("tooltip.wheredidiputit.last_seen.count", line, answer.total);
         lines.add(line.copy().withStyle(ChatFormatting.GRAY));
     }
 
@@ -72,12 +75,13 @@ public final class LastSeenTooltip {
         // Every container in the dimension, however far: the tooltip says where, the find key goes there.
         List<SearchHit> hits = ContainerFinder.search(memory, ItemMatcher.of(stack, mode, nested), Vec3.ZERO, Double.MAX_VALUE);
         ContainerRecord latest = hits.stream().map(SearchHit::record).max(Comparator.comparingLong(ContainerRecord::seenAt)).orElse(null);
-        Answer answer = new Answer(stack.copyWithCount(1), mode, nested, memory, memory.version(), latest, hits.size());
+        long total = hits.stream().mapToLong(SearchHit::count).sum();
+        Answer answer = new Answer(stack.copyWithCount(1), mode, nested, memory, memory.version(), latest, hits.size(), total);
         last = answer;
         return answer;
     }
 
     private record Answer(ItemStack stack, MatchMode mode, boolean nested, DimensionMemory memory, int version,
-                          @Nullable ContainerRecord latest, int containers) {
+                          @Nullable ContainerRecord latest, int containers, long total) {
     }
 }

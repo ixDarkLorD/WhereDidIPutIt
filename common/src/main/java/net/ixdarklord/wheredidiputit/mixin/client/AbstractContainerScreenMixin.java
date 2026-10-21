@@ -2,6 +2,7 @@ package net.ixdarklord.wheredidiputit.mixin.client;
 
 import net.ixdarklord.wheredidiputit.find.FindKey;
 import net.ixdarklord.wheredidiputit.find.HoveredStacks;
+import net.ixdarklord.wheredidiputit.find.IgnoreKey;
 import net.ixdarklord.wheredidiputit.find.ScreenNotice;
 import net.ixdarklord.wheredidiputit.memory.StorageTerminals;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -25,7 +26,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /**
  * Runs the find key on the hovered slot. At the head of the base class's {@code keyPressed}, so screens with text
  * fields (creative search, anvil, recipe book) have already taken the key when one of them is typed in, and before
- * the game's own offhand swap, which also sits on F. Also draws the {@link ScreenNotice} above the panel.
+ * the game's own offhand swap, which also sits on F; the {@link IgnoreKey} too. Also draws the {@link ScreenNotice}
+ * above the panel.
  */
 @Mixin(AbstractContainerScreen.class)
 public abstract class AbstractContainerScreenMixin extends Screen {
@@ -47,6 +49,10 @@ public abstract class AbstractContainerScreenMixin extends Screen {
         // A text field that takes typing gets the letter, as it would without the mod (some screens type into one
         // through this method, such as storage terminals with a focused search box).
         if (this.wheredidiputit$typing()) return;
+        if (IgnoreKey.onKeyPressed(event, (AbstractContainerScreen<?>) (Object) this)) {
+            cir.setReturnValue(true);
+            return;
+        }
         // The slot first, then a storage terminal's own entries, then whatever a recipe viewer has under the mouse.
         ItemStack hovered = this.hoveredSlot != null && this.hoveredSlot.hasItem() ? this.hoveredSlot.getItem() : ItemStack.EMPTY;
         if (hovered.isEmpty()) hovered = StorageTerminals.hovered((AbstractContainerScreen<?>) (Object) this);

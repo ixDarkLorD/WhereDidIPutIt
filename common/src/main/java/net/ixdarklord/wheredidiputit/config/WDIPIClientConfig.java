@@ -47,6 +47,8 @@ public final class WDIPIClientConfig {
             .comment("Shows the item you searched for over each highlighted container, with how many of it are there.").enabledWhen(ENABLED).build();
     public static final ConfigValue<Boolean> GHOST = BUILDER.bool("ghost", true)
             .comment("Shows a see-through ghost of a highlighted container where walls hide it.").enabledWhen(ENABLED).build();
+    public static final ConfigValue<Boolean> SHOW_AGE = BUILDER.bool("showAge", true)
+            .comment("Shows how long ago a remembered container was last seen under its item marker, as what it holds may have changed since.").enabledWhen(ITEM_MARKER).build();
     static {
         BUILDER.pop();
         BUILDER.push("memory", "What is remembered about the containers you open.");

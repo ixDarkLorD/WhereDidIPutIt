@@ -30,8 +30,21 @@ import java.util.Optional;
  * @param items   what it held
  * @param network whether it is a storage mod's terminal, holding what its network showed: live search can't see into
  *                networks, so these stay remembered results even where the server answers
+ * @param ignored whether the player left it out of searches (a trash chest, a farm's output): still remembered, never
+ *                found
  */
-public record ContainerRecord(BlockPos pos, Identifier block, @Nullable Component label, long seenAt, List<StoredItem> items, boolean network) {
+public record ContainerRecord(BlockPos pos, Identifier block, @Nullable Component label, long seenAt, List<StoredItem> items, boolean network,
+                              boolean ignored) {
+    /** The same record, left out of searches or not. */
+    public ContainerRecord withIgnored(boolean ignored) {
+        return new ContainerRecord(this.pos, this.block, this.label, this.seenAt, this.items, this.network, ignored);
+    }
+
+    /** The same record at another position (a chest that became a double chest remembered under its other half). */
+    public ContainerRecord movedTo(BlockPos pos) {
+        return new ContainerRecord(pos, this.block, this.label, this.seenAt, this.items, this.network, this.ignored);
+    }
+
     public CompoundTag save(RegistryOps<Tag> ops) {
         CompoundTag tag = new CompoundTag();
         tag.putIntArray("Pos", new int[]{this.pos.getX(), this.pos.getY(), this.pos.getZ()});
@@ -39,6 +52,7 @@ public record ContainerRecord(BlockPos pos, Identifier block, @Nullable Componen
         if (this.label != null) ComponentSerialization.CODEC.encodeStart(ops, this.label).ifSuccess(label -> tag.put("Label", label));
         tag.putLong("SeenAt", this.seenAt);
         if (this.network) tag.putBoolean("Network", true);
+        if (this.ignored) tag.putBoolean("Ignored", true);
         ListTag items = new ListTag();
         for (StoredItem item : this.items) {
             ItemStack.CODEC.encodeStart(ops, item.stack()).ifSuccess(stack -> {
@@ -75,7 +89,7 @@ public record ContainerRecord(BlockPos pos, Identifier block, @Nullable Componen
             }
         }
         return Optional.of(new ContainerRecord(new BlockPos(pos[0], pos[1], pos[2]), block, label, tag.getLongOr("SeenAt", 0L), List.copyOf(items),
-                tag.getBooleanOr("Network", false)));
+                tag.getBooleanOr("Network", false), tag.getBooleanOr("Ignored", false)));
     }
 
     /** The ops records are written with: NBT, resolving item and component ids against the connection's registries. */

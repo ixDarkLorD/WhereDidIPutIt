@@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -18,7 +19,9 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * The client's memory of containers, for the world or server it is in: opened when joining, saved while playing and
- * when leaving. Records whose block was broken or replaced are dropped once their chunk is loaded and checked.
+ * when leaving. A record whose block the server says was broken or replaced is dropped at once ({@code ClientLevelMixin});
+ * a slow sweep of loaded positions catches the rest (records from before the chunk was loaded, chests joined into
+ * double chests).
  */
 public final class ContainerMemory {
     /** Ticks between checks that remembered containers are still there (and not too old to keep). */
@@ -55,6 +58,14 @@ public final class ContainerMemory {
         if (memory != null) memory.put(record);
     }
 
+    /** The server says the block at {@code pos} is now {@code state}: a container remembered there that isn't it any more is forgotten. */
+    public static void onServerBlockState(ClientLevel level, BlockPos pos, BlockState state) {
+        DimensionMemory memory = dimension(level.dimension());
+        if (memory == null) return;
+        ContainerRecord record = memory.get(pos);
+        if (record != null && !BuiltInRegistries.BLOCK.getKey(state.getBlock()).equals(record.block())) memory.remove(pos);
+    }
+
     private static void tick(Minecraft minecraft) {
         if (current == null || minecraft.level == null) return;
         ContainerWatcher.tick(minecraft);
@@ -81,7 +92,7 @@ public final class ContainerMemory {
             } else if (!key.equals(record.pos())) {
                 // A chest placed beside it made it a double chest remembered under the other half: keep what it held.
                 gone.add(record.pos());
-                if (memory.get(key) == null) moved.add(new ContainerRecord(key, record.block(), record.label(), record.seenAt(), record.items(), record.network()));
+                if (memory.get(key) == null) moved.add(record.movedTo(key));
             }
         }
         gone.forEach(memory::remove);

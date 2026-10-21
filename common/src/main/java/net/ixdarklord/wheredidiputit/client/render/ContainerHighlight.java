@@ -62,8 +62,14 @@ public final class ContainerHighlight {
         ClientPlayerEvents.LEAVE.register(player -> targets = List.of());
     }
 
-    /** What to point out: a container's remembered position, the item searched for and how many of it are there. */
-    public record Found(BlockPos pos, ItemStack item, long count) {
+    /** The {@code seenAt} of a container the server just looked in: it is as it is now. */
+    public static final long LIVE = -1L;
+
+    /**
+     * What to point out: a container's position, the item searched for, how many of it are there, and when it was last
+     * seen (epoch milliseconds, or {@link #LIVE}).
+     */
+    public record Found(BlockPos pos, ItemStack item, long count, long seenAt) {
     }
 
     /** Points out the given containers in the player's level, replacing what was pointed out before. */
@@ -77,9 +83,30 @@ public final class ContainerHighlight {
             AABB shape = shape(level, blocks);
             ContainerGhost.Ghost ghost = WDIPIClientConfig.GHOST.get() ? ContainerGhost.build(level, blocks) : null;
             shown.add(new Target(level.dimension(), container.pos(), shape.inflate(INFLATE), ghost, container.item().copyWithCount(1),
-                    container.count(), now, end));
+                    container.count(), container.seenAt(), now, end));
         }
         targets = List.copyOf(shown);
+    }
+
+    /**
+     * The server says the block at {@code pos} is now {@code state}: a container being pointed out there that was broken
+     * or replaced stops being pointed out, so its ghost doesn't stand where nothing is.
+     */
+    public static void onServerBlockState(Level level, BlockPos pos, BlockState state) {
+        List<Target> current = targets;
+        if (current.isEmpty() || current.getFirst().dimension != level.dimension()) return;
+        List<Target> kept = current.stream().filter(target -> !brokenAt(target, pos, state)).toList();
+        if (kept.size() != current.size()) targets = kept;
+    }
+
+    private static boolean brokenAt(Target target, BlockPos pos, BlockState state) {
+        if (target.ghost != null) {
+            for (ContainerGhost.Placed block : target.ghost.blocks()) {
+                if (block.pos().equals(pos)) return !state.is(block.state().getBlock());
+            }
+            return false;
+        }
+        return target.pos.equals(pos) && state.isAir();
     }
 
     /** The containers being pointed out right now in the given level; empty when there are none. */
@@ -184,14 +211,15 @@ public final class ContainerHighlight {
     }
 
     /**
-     * @param pos   the container's remembered position
-     * @param box   what is outlined, in world coordinates
-     * @param ghost its ghost, or null for none
-     * @param item  the item searched for, a stack of one
-     * @param count how many of it the container held
+     * @param pos    the container's remembered position
+     * @param box    what is outlined, in world coordinates
+     * @param ghost  its ghost, or null for none
+     * @param item   the item searched for, a stack of one
+     * @param count  how many of it the container held
+     * @param seenAt when it was last seen, epoch milliseconds, or {@link #LIVE}
      */
     public record Target(ResourceKey<Level> dimension, BlockPos pos, AABB box, ContainerGhost.@Nullable Ghost ghost, ItemStack item, long count,
-                         long start, long end) {
+                         long seenAt, long start, long end) {
         /** How strongly it shows at {@code now}: fading in, then out at the end. */
         public float alpha(long now) {
             float in = Mth.clamp((now - this.start) / (float) FADE_IN_MILLIS, 0.0F, 1.0F);
