@@ -5,6 +5,7 @@ import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
 import net.ixdarklord.wheredidiputit.find.FindKey;
 import net.ixdarklord.wheredidiputit.find.ScreenNotice;
 import net.ixdarklord.wheredidiputit.find.StoredStacks;
+import net.ixdarklord.wheredidiputit.find.TooltipLines;
 import net.ixdarklord.wheredidiputit.memory.ContainerMemory;
 import net.ixdarklord.wheredidiputit.memory.DimensionMemory;
 import net.minecraft.ChatFormatting;
@@ -124,7 +125,8 @@ public final class SearchScreen extends Screen {
         if (hovered >= 0) {
             StoredStacks.Entry entry = this.shown.get(hovered);
             List<Component> lines = new ArrayList<>(getTooltipFromItem(this.minecraft, entry.stack()));
-            lines.add(Component.translatable("gui.wheredidiputit.search.stored", entry.count(), entry.containers()).withStyle(ChatFormatting.GRAY));
+            lines.add(Component.empty());
+            lines.add(TooltipLines.line("stored", TooltipLines.stored(entry.count(), entry.containers())));
             graphics.setComponentTooltipForNextFrame(this.font, lines, mouseX, mouseY);
         }
         ScreenNotice.extract(graphics, this.left + PANEL_WIDTH / 2, this.top);

@@ -7,16 +7,13 @@ import net.ixdarklord.wheredidiputit.memory.ContainerRecord;
 import net.ixdarklord.wheredidiputit.memory.ContainerWatcher;
 import net.ixdarklord.wheredidiputit.memory.DimensionMemory;
 import net.ixdarklord.wheredidiputit.memory.StoredItem;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,7 +22,7 @@ import java.util.List;
 /**
  * A hint for keeping like with like: with a remembered container open, an item's tooltip says when a container nearby
  * holds more of it ("Most of these are in Chest at 3, -60, 0 (63)"), so a stray stack can join the rest
- * ({@code memory.sortingHints}). The answer is kept until the item, the open container or the memory changes.
+ * ({@code memory.sortingHints}), in the shared look of {@link TooltipLines}. The answer is kept until the item, the open container or the memory changes.
  */
 public final class SortingHints {
     /** How far from the open container another one counts as nearby, in blocks. */
@@ -37,10 +34,11 @@ public final class SortingHints {
     }
 
     public static void init() {
-        ItemTooltipEvents.MODIFY.register(SortingHints::modify);
+        // At the end of the tooltip, after the last-seen section (registered before this).
+        ItemTooltipEvents.APPEND.register((stack, context, player, flag, lines) -> append(stack, lines));
     }
 
-    private static void modify(ItemStack stack, Item.TooltipContext context, TooltipFlag flag, List<Component> lines) {
+    private static void append(ItemStack stack, List<Component> lines) {
         Minecraft minecraft = Minecraft.getInstance();
         if (stack.isEmpty() || minecraft.level == null || minecraft.player == null || !WDIPIClientConfig.ENABLED.get() || !WDIPIClientConfig.SORTING_HINTS.get()) return;
         if (!(minecraft.screen instanceof AbstractContainerScreen<?> screen)) return;
@@ -54,9 +52,8 @@ public final class SortingHints {
             last = answer;
         }
         if (answer.more == null) return;
-        BlockPos pos = answer.more.pos();
-        lines.add(Component.translatable("tooltip.wheredidiputit.sorting", FindMessages.name(answer.more), pos.getX(), pos.getY(), pos.getZ(), answer.count)
-                .withStyle(ChatFormatting.DARK_AQUA));
+        lines.add(TooltipLines.line("more_nearby", TooltipLines.joined(TooltipLines.place(answer.more),
+                Component.translatable("tooltip.wheredidiputit.count", TooltipLines.number(answer.count)))));
     }
 
     // How many of the item the open container holds now (its own slots, not the player's).

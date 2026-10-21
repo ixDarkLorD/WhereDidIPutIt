@@ -24,7 +24,7 @@ This file is for listing all the changes to this project
 - The search screen and the container browser have a cleaner look in the highlight color: a header, a search well, inset slots, scrollbars, badges and flat buttons. The browser can sort by nearest, most recent or name, and shows a glimpse of each container's items in its row.
 - **Skipping containers**: leave a container (a trash chest, a farm's output) out of searches with the browser or a key (unbound by default) while it's open. It's still remembered.
 - The item marker says how long ago a remembered container was last seen ("2m ago"), as what it holds may have changed since. It can be turned off.
-- The last-seen tooltip says how many of the item are stored in all: "(412 in 2 containers)".
+- **Tooltips** are tidier: holding Shift shows a section of its own, "Stored: 412 in 2 containers", the nearest container and where it was last seen, with the same look in the sorting hint and the search screen. Only items seen in a container, or found by a recent search (even in containers never opened), get anything at all, and the mod's lines always come last in the tooltip.
 - A container you break is forgotten, and stops being highlighted, the moment the server confirms it.
 - **Find similar** (key, unbound by default): every container with something like the hovered item: the same enchantment, the same potion, or the same item. Also a match mode ("Similar").
 - **Find room** (key, unbound by default): the nearest container with room for the hovered item, one already holding some first. The marker shows how many more fit.

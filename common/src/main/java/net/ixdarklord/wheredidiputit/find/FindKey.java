@@ -21,6 +21,7 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Util;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
@@ -128,6 +129,7 @@ public final class FindKey {
         for (SearchHit hit : remembered(level, query, mode, player.getEyePosition(), maxDistance)) {
             found.add(new Found(hit.record().pos(), hit.shown(), hit.count(), hit.distance(), hit.record().seenAt(), hit.record().entity()));
         }
+        remember(level, query, mode, found);
         show(minecraft, level, query, all, found, maxDistance);
     }
 
@@ -162,7 +164,21 @@ public final class FindKey {
             }
         }
         found.sort(Comparator.comparingDouble(Found::distance));
+        remember(level, query, mode, found);
         show(minecraft, level, query, all, found, maxDistance);
+    }
+
+    // What a plain find turned up, for the item's tooltip (SearchHistory). A "similar" find matched other items, so it
+    // says nothing about this one.
+    private static void remember(ClientLevel level, ItemStack query, MatchMode mode, List<Found> found) {
+        if (mode == MatchMode.SIMILAR) return;
+        List<SearchHistory.Place> places = new ArrayList<>(found.size());
+        for (Found hit : found) {
+            Entity entity = hit.entity() != null ? level.getEntity(hit.entity()) : null;
+            Component name = entity != null ? entity.getName() : level.getBlockState(hit.pos()).getBlock().getName();
+            places.add(new SearchHistory.Place(hit.pos(), name, hit.count()));
+        }
+        SearchHistory.record(level.dimension(), query, places);
     }
 
     private static List<SearchHit> remembered(ClientLevel level, ItemStack query, MatchMode mode, Vec3 from, int maxDistance) {
