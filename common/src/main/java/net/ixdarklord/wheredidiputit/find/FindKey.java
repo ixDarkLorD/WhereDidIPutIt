@@ -6,6 +6,7 @@ import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 import net.ixdarklord.wheredidiputit.client.render.ContainerHighlight;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
 import net.ixdarklord.wheredidiputit.memory.ContainerMemory;
+import net.ixdarklord.wheredidiputit.memory.ContainerRecord;
 import net.ixdarklord.wheredidiputit.memory.DimensionMemory;
 import net.ixdarklord.wheredidiputit.network.FindResultPayload;
 import net.minecraft.core.BlockPos;
@@ -62,15 +63,16 @@ public final class FindKey {
         long now = Util.getMillis();
         if (now - lastPress < REPEAT_MILLIS) return true;
         lastPress = now;
-        find(Minecraft.getInstance(), hovered, all);
+        find(hovered, all);
         return true;
     }
 
-    private static void find(Minecraft minecraft, ItemStack query, boolean all) {
+    /** Points out the nearest container holding {@code query}, or all of them: asks the server when it can, else memory. */
+    public static void find(ItemStack query, boolean all) {
         if (LiveSearch.usable()) {
             LiveSearch.request(query, all);
         } else {
-            findInMemory(minecraft, query, all);
+            findInMemory(Minecraft.getInstance(), query, all);
         }
     }
 
@@ -82,7 +84,7 @@ public final class FindKey {
         int maxDistance = WDIPIClientConfig.MAX_SEARCH_DISTANCE.get();
         List<Found> found = new ArrayList<>();
         for (SearchHit hit : remembered(level, query, player.getEyePosition(), maxDistance)) {
-            found.add(new Found(hit.record().pos(), hit.shown(), hit.count(), hit.distance()));
+            found.add(new Found(hit.record().pos(), hit.shown(), hit.count(), hit.distance(), hit.record().seenAt()));
         }
         show(minecraft, level, query, all, found, maxDistance);
     }
@@ -99,16 +101,20 @@ public final class FindKey {
         Vec3 eyes = player.getEyePosition();
         List<Found> found = new ArrayList<>();
         Set<BlockPos> live = new HashSet<>();
+        DimensionMemory memory = ContainerMemory.dimension(level.dimension());
         for (FindResultPayload.Hit hit : answer.hits()) {
+            // The server doesn't know what the player left out of searches.
+            ContainerRecord known = memory != null ? memory.get(hit.pos()) : null;
+            if (known != null && known.ignored()) continue;
             double distance = Vec3.atCenterOf(hit.pos()).distanceTo(eyes);
             if (distance > maxDistance) continue;
             live.add(hit.pos());
-            found.add(new Found(hit.pos(), hit.shown(), hit.count(), distance));
+            found.add(new Found(hit.pos(), hit.shown(), hit.count(), distance, ContainerHighlight.LIVE));
         }
         for (SearchHit hit : remembered(level, query, eyes, maxDistance)) {
             boolean beyond = hit.distance() > answer.radius();
             if ((beyond || hit.record().network()) && !live.contains(hit.record().pos())) {
-                found.add(new Found(hit.record().pos(), hit.shown(), hit.count(), hit.distance()));
+                found.add(new Found(hit.record().pos(), hit.shown(), hit.count(), hit.distance(), hit.record().seenAt()));
             }
         }
         found.sort(Comparator.comparingDouble(Found::distance));
@@ -134,11 +140,11 @@ public final class FindKey {
         List<Found> shown = all ? found : found.subList(0, 1);
         if (WDIPIClientConfig.CLOSE_SCREEN_ON_SEARCH.get()) close(minecraft);
         ContainerHighlight.show(level, shown.stream()
-                .map(hit -> new ContainerHighlight.Found(hit.pos(), hit.item().isEmpty() ? query : hit.item(), hit.count())).toList());
+                .map(hit -> new ContainerHighlight.Found(hit.pos(), hit.item().isEmpty() ? query : hit.item(), hit.count(), hit.seenAt())).toList());
     }
 
     // A container found, from memory or from the server.
-    private record Found(BlockPos pos, ItemStack item, long count, double distance) {
+    private record Found(BlockPos pos, ItemStack item, long count, double distance, long seenAt) {
     }
 
     private static void close(Minecraft minecraft) {

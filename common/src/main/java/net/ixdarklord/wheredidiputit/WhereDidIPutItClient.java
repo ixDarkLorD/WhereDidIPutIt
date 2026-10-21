@@ -5,9 +5,11 @@ import net.ixdarklord.coolcatcore.api.platform.Platform;
 import net.ixdarklord.wheredidiputit.client.hud.ItemMarker;
 import net.ixdarklord.wheredidiputit.client.hud.TargetArrow;
 import net.ixdarklord.wheredidiputit.client.render.ContainerHighlight;
+import net.ixdarklord.wheredidiputit.client.screen.ScreenKeys;
 import net.ixdarklord.wheredidiputit.compat.refinedstorage.RefinedStorageTerminal;
 import net.ixdarklord.wheredidiputit.compat.rei.ReiCompat;
 import net.ixdarklord.wheredidiputit.find.FindKey;
+import net.ixdarklord.wheredidiputit.find.IgnoreKey;
 import net.ixdarklord.wheredidiputit.find.LiveSearch;
 import net.ixdarklord.wheredidiputit.find.LastSeenTooltip;
 import net.ixdarklord.wheredidiputit.memory.ContainerMemory;
@@ -22,6 +24,8 @@ public final class WhereDidIPutItClient implements ClientModConstructor {
     public void onConstructMod() {
         ContainerMemory.init();
         FindKey.init();
+        IgnoreKey.init();
+        ScreenKeys.init();
         LiveSearch.init();
         LastSeenTooltip.init();
         ContainerHighlight.init();

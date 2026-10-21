@@ -13,10 +13,11 @@ public final class ContainerFinder {
     private ContainerFinder() {
     }
 
-    /** The containers holding a matching item within {@code maxDistance} of {@code from}, nearest first. */
+    /** The containers holding a matching item within {@code maxDistance} of {@code from}, nearest first; never those left out of searches. */
     public static List<SearchHit> search(DimensionMemory memory, ItemMatcher matcher, Vec3 from, double maxDistance) {
         List<SearchHit> hits = new ArrayList<>();
         for (ContainerRecord record : memory.records()) {
+            if (record.ignored()) continue;
             double distance = Vec3.atCenterOf(record.pos()).distanceTo(from);
             if (distance > maxDistance) continue;
             long count = matcher.count(record.items());

@@ -38,6 +38,8 @@ public final class ContainerWatcher {
     private static @Nullable AbstractContainerScreen<?> watched;
     private static @Nullable BlockPos watchedPos;
     private static @Nullable ResourceKey<Level> watchedDimension;
+    // Whether the container open now is left out of searches: kept when it is recorded again on closing.
+    private static boolean watchedIgnored;
 
     private ContainerWatcher() {
     }
@@ -72,6 +74,9 @@ public final class ContainerWatcher {
         watched = screen;
         watchedPos = key;
         watchedDimension = usedDimension;
+        DimensionMemory memory = ContainerMemory.dimension(usedDimension);
+        ContainerRecord known = memory != null ? memory.get(key) : null;
+        watchedIgnored = known != null && known.ignored();
     }
 
     private static void stopWatching(Minecraft minecraft) {
@@ -94,8 +99,22 @@ public final class ContainerWatcher {
         BlockState state = minecraft.level.getBlockState(pos);
         Component title = screen.getTitle();
         Component label = title.getString().isBlank() ? null : title.copy();
-        ContainerRecord record = new ContainerRecord(pos, BuiltInRegistries.BLOCK.getKey(state.getBlock()), label, System.currentTimeMillis(), List.copyOf(items), network);
+        ContainerRecord record = new ContainerRecord(pos, BuiltInRegistries.BLOCK.getKey(state.getBlock()), label, System.currentTimeMillis(), List.copyOf(items), network,
+                watchedIgnored);
         ContainerMemory.record(dimension, record);
+    }
+
+    /**
+     * Leaves the container open now out of searches, or takes it back in; null when no remembered container is open
+     * ({@code screen} isn't the one being watched), else whether it is now left out.
+     */
+    public static @Nullable Boolean toggleIgnored(AbstractContainerScreen<?> screen) {
+        if (watched != screen || watchedPos == null || watchedDimension == null) return null;
+        watchedIgnored = !watchedIgnored;
+        DimensionMemory memory = ContainerMemory.dimension(watchedDimension);
+        ContainerRecord known = memory != null ? memory.get(watchedPos) : null;
+        if (known != null) memory.put(known.withIgnored(watchedIgnored));
+        return watchedIgnored;
     }
 
     /** What the screen shows: a storage terminal's whole network, else its slots that aren't the player's; null if it has none. */
