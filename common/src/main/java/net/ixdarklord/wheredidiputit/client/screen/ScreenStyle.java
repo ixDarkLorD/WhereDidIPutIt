@@ -107,10 +107,26 @@ public final class ScreenStyle {
         graphics.fill(x, top, x + 2, top + thumb, accent());
     }
 
+    /** The space between hints set side by side. */
+    private static final int HINT_GAP = 10;
+
+    /** How wide a hint is: its keycap, then what it does. */
+    public static int hintWidth(Font font, Component key, Component action) {
+        return font.width(key) + 8 + 4 + font.width(action);
+    }
+
+    /** Hints side by side, as one row centred on {@code centerX}: each a key and what it does. */
+    public static void hints(GuiGraphicsExtractor graphics, Font font, int centerX, int y, Component... keysAndActions) {
+        int width = -HINT_GAP;
+        for (int i = 0; i < keysAndActions.length; i += 2) width += hintWidth(font, keysAndActions[i], keysAndActions[i + 1]) + HINT_GAP;
+        int x = centerX - width / 2;
+        for (int i = 0; i < keysAndActions.length; i += 2) x = hint(graphics, font, keysAndActions[i], keysAndActions[i + 1], x, y);
+    }
+
     /** A key shown as a keycap in a hint ("LMB"), then what it does; returns where the next hint starts. */
     public static int hint(GuiGraphicsExtractor graphics, Font font, Component key, Component action, int x, int y) {
         int width = badge(graphics, font, key, x, y, 0xFF2A313B, TEXT);
         graphics.text(font, action, x + width + 4, y + 2, MUTED, false);
-        return x + width + 4 + font.width(action) + 10;
+        return x + width + 4 + font.width(action) + HINT_GAP;
     }
 }
