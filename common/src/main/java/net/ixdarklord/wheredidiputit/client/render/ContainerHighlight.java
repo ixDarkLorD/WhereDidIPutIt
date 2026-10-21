@@ -7,11 +7,17 @@ import net.ixdarklord.coolcatcanvas.api.client.vfx.WorldVfx;
 import net.ixdarklord.coolcatcore.api.event.v2.client.ClientPlayerEvents;
 import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.BlockPos;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.ChestBlock;
@@ -24,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * The containers a search found, pointed out for the highlight duration: a glowing outline round each, seen through
@@ -69,7 +76,11 @@ public final class ContainerHighlight {
      * What to point out: a container's position, the item searched for, how many of it are there, and when it was last
      * seen (epoch milliseconds, or {@link #LIVE}).
      */
-    public record Found(BlockPos pos, ItemStack item, long count, long seenAt) {
+    public record Found(BlockPos pos, ItemStack item, long count, long seenAt, @Nullable UUID entity) {
+        /** A block container. */
+        public Found(BlockPos pos, ItemStack item, long count, long seenAt) {
+            this(pos, item, count, seenAt, null);
+        }
     }
 
     /** Points out the given containers in the player's level, replacing what was pointed out before. */
@@ -79,13 +90,40 @@ public final class ContainerHighlight {
         List<Target> shown = new ArrayList<>();
         ContainerGhost.clearModels();
         for (Found container : found) {
+            if (container.entity() != null) {
+                // An entity has no block to draw a ghost of: its outline is its box, where it is now if it is loaded.
+                Entity entity = level.getEntity(container.entity());
+                AABB box = entity != null ? entity.getBoundingBox() : new AABB(container.pos());
+                shown.add(new Target(level.dimension(), container.pos(), box.inflate(INFLATE), null, container.item().copyWithCount(1),
+                        container.count(), container.seenAt(), container.entity(), now, end));
+                continue;
+            }
             List<BlockPos> blocks = blocks(level, container.pos());
             AABB shape = shape(level, blocks);
             ContainerGhost.Ghost ghost = WDIPIClientConfig.GHOST.get() ? ContainerGhost.build(level, blocks) : null;
             shown.add(new Target(level.dimension(), container.pos(), shape.inflate(INFLATE), ghost, container.item().copyWithCount(1),
-                    container.count(), container.seenAt(), now, end));
+                    container.count(), container.seenAt(), null, now, end));
         }
         targets = List.copyOf(shown);
+        if (shown.size() == 1) {
+            Target only = shown.getFirst();
+            Guidance.follow(level, only.pos, only.box, only.item);
+        }
+        if (WDIPIClientConfig.SOUND.get()) chime(shown);
+    }
+
+    // A soft chime from the direction of each of the nearest few, placed near the player so it is heard however far
+    // they are: a sound at the container itself would be lost in the distance.
+    private static void chime(List<Target> shown) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null) return;
+        Vec3 eyes = minecraft.player.getEyePosition();
+        for (int i = 0; i < Math.min(3, shown.size()); i++) {
+            Vec3 to = shown.get(i).box.getCenter().subtract(eyes);
+            Vec3 at = eyes.add(to.normalize().scale(Math.min(8.0, to.length())));
+            minecraft.getSoundManager().play(new SimpleSoundInstance(SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.PLAYERS, 0.7F, 1.4F + i * 0.2F,
+                    SoundInstance.createUnseededRandom(), at.x, at.y, at.z));
+        }
     }
 
     /**
@@ -95,11 +133,13 @@ public final class ContainerHighlight {
     public static void onServerBlockState(Level level, BlockPos pos, BlockState state) {
         List<Target> current = targets;
         if (current.isEmpty() || current.getFirst().dimension != level.dimension()) return;
+        Guidance.onReachedIfBroken(pos, state);
         List<Target> kept = current.stream().filter(target -> !brokenAt(target, pos, state)).toList();
         if (kept.size() != current.size()) targets = kept;
     }
 
     private static boolean brokenAt(Target target, BlockPos pos, BlockState state) {
+        if (target.entity != null) return false;
         if (target.ghost != null) {
             for (ContainerGhost.Placed block : target.ghost.blocks()) {
                 if (block.pos().equals(pos)) return !state.is(block.state().getBlock());
@@ -217,9 +257,10 @@ public final class ContainerHighlight {
      * @param item   the item searched for, a stack of one
      * @param count  how many of it the container held
      * @param seenAt when it was last seen, epoch milliseconds, or {@link #LIVE}
+     * @param entity the UUID of an entity container, or null for a block
      */
     public record Target(ResourceKey<Level> dimension, BlockPos pos, AABB box, ContainerGhost.@Nullable Ghost ghost, ItemStack item, long count,
-                         long seenAt, long start, long end) {
+                         long seenAt, @Nullable UUID entity, long start, long end) {
         /** How strongly it shows at {@code now}: fading in, then out at the end. */
         public float alpha(long now) {
             float in = Mth.clamp((now - this.start) / (float) FADE_IN_MILLIS, 0.0F, 1.0F);

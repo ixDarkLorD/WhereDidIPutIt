@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 /**
  * Every container remembered in the player's dimension, nearest first, narrowed by name or by what they hold. The one
@@ -58,6 +59,7 @@ public final class ContainerBrowserScreen extends Screen {
     private @Nullable DimensionMemory memory;
     private List<ContainerRecord> shown = List.of();
     private @Nullable BlockPos selected;
+    private @Nullable UUID selectedEntity;
     private int listScroll;
     private int gridScroll;
     private int left;
@@ -111,6 +113,7 @@ public final class ContainerBrowserScreen extends Screen {
         this.shown = matching;
         this.listScroll = Mth.clamp(this.listScroll, 0, Math.max(0, this.shown.size() - LIST_ROWS));
         if (this.selected() == null) this.selected = null;
+        if (this.selectedEntity != null && (this.memory == null || this.memory.getEntity(this.selectedEntity) == null)) this.selectedEntity = null;
         this.updateButtons();
     }
 
@@ -128,7 +131,9 @@ public final class ContainerBrowserScreen extends Screen {
     }
 
     private @Nullable ContainerRecord selected() {
-        return this.selected != null && this.memory != null ? this.memory.get(this.selected) : null;
+        if (this.memory == null) return null;
+        if (this.selectedEntity != null) return this.memory.getEntity(this.selectedEntity);
+        return this.selected != null ? this.memory.get(this.selected) : null;
     }
 
     private void updateButtons() {
@@ -145,7 +150,7 @@ public final class ContainerBrowserScreen extends Screen {
         ContainerRecord record = this.selected();
         if (record == null || this.minecraft.level == null) return;
         long total = record.items().stream().mapToLong(StoredItem::count).sum();
-        ContainerHighlight.show(this.minecraft.level, List.of(new ContainerHighlight.Found(record.pos(), icon(record), total, record.seenAt())));
+        ContainerHighlight.show(this.minecraft.level, List.of(new ContainerHighlight.Found(record.pos(), icon(record), total, record.seenAt(), record.entity())));
         this.onClose();
     }
 
@@ -159,12 +164,19 @@ public final class ContainerBrowserScreen extends Screen {
     private void forgetSelected() {
         ContainerRecord record = this.selected();
         if (record == null || this.memory == null) return;
-        this.memory.remove(record.pos());
+        this.memory.remove(record);
         this.selected = null;
+        this.selectedEntity = null;
         this.refresh();
     }
 
     private static ItemStack icon(ContainerRecord record) {
+        if (record.entity() != null) {
+            // Chest boats and minecarts share their entity's id with their item; animals show their spawn egg.
+            ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.getValue(record.block()));
+            if (stack.isEmpty()) stack = new ItemStack(BuiltInRegistries.ITEM.getValue(record.block().withSuffix("_spawn_egg")));
+            return stack.isEmpty() ? new ItemStack(Items.CHEST) : stack;
+        }
         ItemStack stack = new ItemStack(BuiltInRegistries.BLOCK.getValue(record.block()).asItem());
         return stack.isEmpty() ? new ItemStack(Items.CHEST) : stack;
     }
@@ -198,7 +210,8 @@ public final class ContainerBrowserScreen extends Screen {
             if (index >= this.shown.size()) break;
             ContainerRecord record = this.shown.get(index);
             int y = this.listTop() + row * ROW_HEIGHT;
-            graphics.fill(x, y, x + LIST_WIDTH - PADDING, y + ROW_HEIGHT - 2, record.pos().equals(this.selected) ? SELECTED_COLOR : ROW_COLOR);
+            boolean picked = record.entity() != null ? record.entity().equals(this.selectedEntity) : this.selectedEntity == null && record.pos().equals(this.selected);
+            graphics.fill(x, y, x + LIST_WIDTH - PADDING, y + ROW_HEIGHT - 2, picked ? SELECTED_COLOR : ROW_COLOR);
             if (index == hovered) graphics.fill(x, y, x + LIST_WIDTH - PADDING, y + ROW_HEIGHT - 2, HOVER_COLOR);
             graphics.item(icon(record), x + 2, y + 2);
             int textColor = record.ignored() ? DIM_COLOR : TEXT_COLOR;
@@ -261,7 +274,9 @@ public final class ContainerBrowserScreen extends Screen {
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         int index = this.rowAt(event.x(), event.y());
         if (index >= 0) {
-            this.selected = this.shown.get(index).pos();
+            ContainerRecord picked = this.shown.get(index);
+            this.selected = picked.pos();
+            this.selectedEntity = picked.entity();
             this.updateButtons();
             if (doubleClick) this.showSelected();
             return true;

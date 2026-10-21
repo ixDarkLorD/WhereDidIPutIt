@@ -20,9 +20,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -68,6 +70,11 @@ public final class WorldMemory {
         return null;
     }
 
+    /** This world's or server's folder name, as files and commands show it. */
+    public String name() {
+        return this.folder.getFileName().toString();
+    }
+
     public DimensionMemory dimension(ResourceKey<Level> dimension) {
         return this.dimensions.computeIfAbsent(dimension, this::load);
     }
@@ -82,8 +89,78 @@ public final class WorldMemory {
         });
     }
 
+    /** Where exports are kept: {@code wheredidiputit/exports/} in the game folder. */
+    public static Path exportsFolder() {
+        return Platform.getGameFolder().resolve(WhereDidIPutIt.MOD_ID).resolve("exports");
+    }
+
+    /**
+     * Copies this world's memory to {@code exports/<name>/}, after its unsaved changes are written: both on the writer
+     * thread, in that order.
+     *
+     * @return the folder it goes to
+     */
+    public Path export(String name) {
+        this.saveDirty();
+        Path target = exportsFolder().resolve(sanitize(name));
+        WRITER.execute(() -> {
+            try {
+                copyFolder(this.folder, target);
+            } catch (IOException e) {
+                WhereDidIPutIt.LOGGER.error("Couldn't export the remembered containers to {}", target, e);
+            }
+        });
+        return target;
+    }
+
+    /**
+     * Merges {@code exports/<name>/} into this world's memory: for each container, whichever record saw it last. Loaded
+     * dimensions take it in place; the others' files are merged and written.
+     *
+     * @return how many records were taken in
+     * @throws IOException when there is no such export, or a file of it can't be read
+     */
+    public int importFrom(String name) throws IOException {
+        Path source = exportsFolder().resolve(sanitize(name));
+        if (!Files.isDirectory(source)) throw new NoSuchFileException(source.toString());
+        List<Path> files;
+        try (var walk = Files.walk(source)) {
+            files = walk.filter(file -> Files.isRegularFile(file) && file.getFileName().toString().endsWith(".dat")).toList();
+        }
+        int taken = 0;
+        for (Path file : files) {
+            DimensionMemory incoming = DimensionMemory.load(NbtIo.readCompressed(file, NbtAccounter.unlimitedHeap()), this.ops);
+            Path target = this.folder.resolve(source.relativize(file).toString());
+            DimensionMemory loaded = this.dimensions.entrySet().stream().filter(entry -> this.file(entry.getKey()).equals(target))
+                    .map(Map.Entry::getValue).findFirst().orElse(null);
+            if (loaded != null) {
+                taken += loaded.mergeNewer(incoming);
+                continue;
+            }
+            DimensionMemory stored = this.read(target);
+            taken += stored.mergeNewer(incoming);
+            CompoundTag tag = stored.save(this.ops);
+            WRITER.execute(() -> write(tag, target));
+        }
+        return taken;
+    }
+
+    private static void copyFolder(Path from, Path to) throws IOException {
+        if (!Files.isDirectory(from)) return;
+        try (var walk = Files.walk(from)) {
+            for (Path file : walk.filter(path -> Files.isRegularFile(path) && path.getFileName().toString().endsWith(".dat")).toList()) {
+                Path copy = to.resolve(from.relativize(file).toString());
+                Files.createDirectories(copy.getParent());
+                Files.copy(file, copy, StandardCopyOption.REPLACE_EXISTING);
+            }
+        }
+    }
+
     private DimensionMemory load(ResourceKey<Level> dimension) {
-        Path file = this.file(dimension);
+        return this.read(this.file(dimension));
+    }
+
+    private DimensionMemory read(Path file) {
         if (!Files.isRegularFile(file)) return new DimensionMemory();
         try {
             return DimensionMemory.load(NbtIo.readCompressed(file, NbtAccounter.unlimitedHeap()), this.ops);

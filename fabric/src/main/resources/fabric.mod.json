@@ -19,7 +19,8 @@
   "environment": "${mod_environment}",
   "entrypoints": {
     "coolcatlib:common": [
-      "net.ixdarklord.wheredidiputit.WhereDidIPutIt"
+      "net.ixdarklord.wheredidiputit.WhereDidIPutIt",
+      "net.ixdarklord.wheredidiputit.fabric.WhereDidIPutItFabricCommon"
     ],
     "coolcatlib:client": [
       "net.ixdarklord.wheredidiputit.WhereDidIPutItClient",

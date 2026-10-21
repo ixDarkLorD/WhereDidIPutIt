@@ -47,6 +47,12 @@ public final class WDIPIClientConfig {
             .comment("Shows the item you searched for over each highlighted container, with how many of it are there.").enabledWhen(ENABLED).build();
     public static final ConfigValue<Boolean> GHOST = BUILDER.bool("ghost", true)
             .comment("Shows a see-through ghost of a highlighted container where walls hide it.").enabledWhen(ENABLED).build();
+    public static final ConfigValue<Boolean> PATH_LINE = BUILDER.bool("pathLine", true)
+            .comment("After finding one container, draws a line of dots on the ground along a walking route to it, until you open it.").enabledWhen(ENABLED).build();
+    public static final ConfigValue<Boolean> COMPASS = BUILDER.bool("compass", true)
+            .comment("After finding one container, keeps a small compass at the top of the screen pointing to it, until you open it.").enabledWhen(ENABLED).build();
+    public static final ConfigValue<Boolean> SOUND = BUILDER.bool("sound", true)
+            .comment("Plays a soft chime from the direction of each container found.").enabledWhen(ENABLED).build();
     public static final ConfigValue<Boolean> SHOW_AGE = BUILDER.bool("showAge", true)
             .comment("Shows how long ago a remembered container was last seen under its item marker, as what it holds may have changed since.").enabledWhen(ITEM_MARKER).build();
     static {
@@ -55,6 +61,8 @@ public final class WDIPIClientConfig {
     }
     public static final ConfigValue<Boolean> LAST_SEEN_TOOLTIP = BUILDER.bool("lastSeenTooltip", true)
             .comment("Holding the tooltip key on an item shows where you last saw it.").enabledWhen(ENABLED).build();
+    public static final ConfigValue<Boolean> SORTING_HINTS = BUILDER.bool("sortingHints", true)
+            .comment("With a container open, an item's tooltip says when a container nearby holds more of it, to keep like with like.").enabledWhen(ENABLED).build();
     public static final ConfigValue<Boolean> INDEX_NESTED_CONTENTS = BUILDER.bool("indexNestedContents", true)
             .comment("Also remembers what is inside shulker boxes and bundles stored in containers.").enabledWhen(ENABLED).build();
     public static final ConfigValue<Integer> FORGET_AFTER_DAYS = BUILDER.intValue("forgetAfterDays", 0)

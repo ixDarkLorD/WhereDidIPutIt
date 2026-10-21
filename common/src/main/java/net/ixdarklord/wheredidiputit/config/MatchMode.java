@@ -12,7 +12,12 @@ public enum MatchMode implements EnumType.Displayable {
     /** The same item, whatever its components. */
     IGNORE_DATA,
     /** Any item sharing one of the searched item's tags, e.g. any log for an oak log. */
-    ITEM_TAG;
+    ITEM_TAG,
+    /**
+     * Items alike in what they do: sharing an enchantment with an enchanted item or book, holding the same potion as a
+     * potion or tipped arrow, otherwise the same item. Last, so the earlier modes keep their place in saved configs.
+     */
+    SIMILAR;
 
     @Override
     public Component displayName() {

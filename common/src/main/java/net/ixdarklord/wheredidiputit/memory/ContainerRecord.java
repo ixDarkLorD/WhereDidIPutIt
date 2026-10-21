@@ -3,6 +3,7 @@ package net.ixdarklord.wheredidiputit.memory;
 import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
@@ -17,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * What one container held the last time it was opened. Stacks keep their components, so shulker boxes and bundles
@@ -32,17 +34,26 @@ import java.util.Optional;
  *                networks, so these stay remembered results even where the server answers
  * @param ignored whether the player left it out of searches (a trash chest, a farm's output): still remembered, never
  *                found
+ * @param slots   how many slots it has, for finding room; 0 when unknown or not plain storage (a furnace's slots aren't
+ *                room for anything)
+ * @param entity  for a container that is an entity (a chest boat, a minecart with a chest, a donkey with one), its UUID;
+ *                then {@code pos} is where it was last seen and {@code block} its entity type's id
  */
 public record ContainerRecord(BlockPos pos, Identifier block, @Nullable Component label, long seenAt, List<StoredItem> items, boolean network,
-                              boolean ignored) {
-    /** The same record, left out of searches or not. */
-    public ContainerRecord withIgnored(boolean ignored) {
-        return new ContainerRecord(this.pos, this.block, this.label, this.seenAt, this.items, this.network, ignored);
+                              boolean ignored, int slots, @Nullable UUID entity) {
+    /** What it is remembered under: its UUID for an entity, else its position. */
+    public Object key() {
+        return this.entity != null ? this.entity : this.pos;
     }
 
-    /** The same record at another position (a chest that became a double chest remembered under its other half). */
+    /** The same record, left out of searches or not. */
+    public ContainerRecord withIgnored(boolean ignored) {
+        return new ContainerRecord(this.pos, this.block, this.label, this.seenAt, this.items, this.network, ignored, this.slots, this.entity);
+    }
+
+    /** The same record at another position (a chest that became a double chest remembered under its other half, an entity that moved). */
     public ContainerRecord movedTo(BlockPos pos) {
-        return new ContainerRecord(pos, this.block, this.label, this.seenAt, this.items, this.network, this.ignored);
+        return new ContainerRecord(pos, this.block, this.label, this.seenAt, this.items, this.network, this.ignored, this.slots, this.entity);
     }
 
     public CompoundTag save(RegistryOps<Tag> ops) {
@@ -53,6 +64,8 @@ public record ContainerRecord(BlockPos pos, Identifier block, @Nullable Componen
         tag.putLong("SeenAt", this.seenAt);
         if (this.network) tag.putBoolean("Network", true);
         if (this.ignored) tag.putBoolean("Ignored", true);
+        if (this.slots > 0) tag.putInt("Slots", this.slots);
+        if (this.entity != null) tag.putIntArray("Entity", UUIDUtil.uuidToIntArray(this.entity));
         ListTag items = new ListTag();
         for (StoredItem item : this.items) {
             ItemStack.CODEC.encodeStart(ops, item.stack()).ifSuccess(stack -> {
@@ -89,7 +102,8 @@ public record ContainerRecord(BlockPos pos, Identifier block, @Nullable Componen
             }
         }
         return Optional.of(new ContainerRecord(new BlockPos(pos[0], pos[1], pos[2]), block, label, tag.getLongOr("SeenAt", 0L), List.copyOf(items),
-                tag.getBooleanOr("Network", false), tag.getBooleanOr("Ignored", false)));
+                tag.getBooleanOr("Network", false), tag.getBooleanOr("Ignored", false), tag.getIntOr("Slots", 0),
+                tag.getIntArray("Entity").filter(uuid -> uuid.length == 4).map(UUIDUtil::uuidFromIntArray).orElse(null)));
     }
 
     /** The ops records are written with: NBT, resolving item and component ids against the connection's registries. */

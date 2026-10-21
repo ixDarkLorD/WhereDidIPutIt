@@ -7,10 +7,13 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.RegistryOps;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /** The containers remembered in one dimension of one world or server. */
 public final class DimensionMemory {
@@ -18,6 +21,8 @@ public final class DimensionMemory {
     private static final int FORMAT = 2;
 
     private final Map<BlockPos, ContainerRecord> records = new HashMap<>();
+    // Containers that are entities, which move: by their UUID.
+    private final Map<UUID, ContainerRecord> entities = new HashMap<>();
     private boolean dirty;
     // Counts changes, so what was worked out from the records can tell when it is out of date.
     private int version;
@@ -26,22 +31,71 @@ public final class DimensionMemory {
         return this.records.get(pos);
     }
 
+    public @Nullable ContainerRecord getEntity(UUID entity) {
+        return this.entities.get(entity);
+    }
+
+    /** Every record, blocks and entities. */
     public Collection<ContainerRecord> records() {
-        return Collections.unmodifiableCollection(this.records.values());
+        if (this.entities.isEmpty()) return Collections.unmodifiableCollection(this.records.values());
+        List<ContainerRecord> all = new ArrayList<>(this.records.size() + this.entities.size());
+        all.addAll(this.records.values());
+        all.addAll(this.entities.values());
+        return Collections.unmodifiableList(all);
+    }
+
+    /** The containers that are entities. */
+    public Collection<ContainerRecord> entityRecords() {
+        return Collections.unmodifiableCollection(this.entities.values());
     }
 
     public void put(ContainerRecord record) {
-        this.records.put(record.pos(), record);
+        this.store(record);
         this.changed();
     }
 
+    private void store(ContainerRecord record) {
+        if (record.entity() != null) {
+            this.entities.put(record.entity(), record);
+        } else {
+            this.records.put(record.pos(), record);
+        }
+    }
+
+    /** Forgets the block container at {@code pos}. */
     public void remove(BlockPos pos) {
         if (this.records.remove(pos) != null) this.changed();
     }
 
+    /** Forgets a record, block or entity. */
+    public void remove(ContainerRecord record) {
+        boolean removed = record.entity() != null ? this.entities.remove(record.entity()) != null : this.records.remove(record.pos()) != null;
+        if (removed) this.changed();
+    }
+
+    /**
+     * Takes in another memory's records (an import): each container's record is kept from whichever saw it last.
+     *
+     * @return how many records were taken in
+     */
+    public int mergeNewer(DimensionMemory other) {
+        int taken = 0;
+        for (ContainerRecord record : other.records()) {
+            ContainerRecord known = record.entity() != null ? this.getEntity(record.entity()) : this.get(record.pos());
+            if (known == null || record.seenAt() > known.seenAt()) {
+                this.store(record);
+                taken++;
+            }
+        }
+        if (taken > 0) this.changed();
+        return taken;
+    }
+
     /** Forgets every container last opened before {@code cutoff} (milliseconds since the epoch). */
     public void forgetOlderThan(long cutoff) {
-        if (this.records.values().removeIf(record -> record.seenAt() < cutoff)) this.changed();
+        boolean blocks = this.records.values().removeIf(record -> record.seenAt() < cutoff);
+        boolean entities = this.entities.values().removeIf(record -> record.seenAt() < cutoff);
+        if (blocks || entities) this.changed();
     }
 
     /** Goes up whenever a record is added, replaced or removed. */
@@ -63,7 +117,7 @@ public final class DimensionMemory {
         CompoundTag tag = new CompoundTag();
         tag.putInt("Format", FORMAT);
         ListTag containers = new ListTag();
-        for (ContainerRecord record : this.records.values()) {
+        for (ContainerRecord record : this.records()) {
             containers.add(record.save(ops));
         }
         tag.put("Containers", containers);
@@ -75,7 +129,7 @@ public final class DimensionMemory {
         DimensionMemory memory = new DimensionMemory();
         int format = tag.getIntOr("Format", 1);
         tag.getListOrEmpty("Containers").compoundStream()
-                .forEach(container -> ContainerRecord.load(container, ops, format).ifPresent(record -> memory.records.put(record.pos(), record)));
+                .forEach(container -> ContainerRecord.load(container, ops, format).ifPresent(memory::store));
         return memory;
     }
 }

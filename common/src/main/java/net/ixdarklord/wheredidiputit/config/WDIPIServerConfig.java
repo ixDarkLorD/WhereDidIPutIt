@@ -25,6 +25,14 @@ public final class WDIPIServerConfig {
             .range(0, 60).comment("Seconds a player waits between live searches.").enabledWhen(ALLOW_LIVE_SEARCH).build();
     public static final ConfigValue<Boolean> INCLUDE_SHULKER_CONTENTS = BUILDER.bool("includeShulkerContents", true)
             .comment("Whether live search also looks inside shulker boxes and bundles stored in containers.").enabledWhen(ALLOW_LIVE_SEARCH).build();
+    public static final ConfigValue<Boolean> INCLUDE_STORAGE_NETWORKS = BUILDER.bool("includeStorageNetworks", true)
+            .comment("Whether live search also looks into storage networks (Applied Energistics 2, Refined Storage, Simple Storage Network, Tom's Simple Storage) through their terminals and controllers nearby.").enabledWhen(ALLOW_LIVE_SEARCH).build();
+    static {
+        BUILDER.pop();
+        BUILDER.push("sharing", "Sharing what players have seen.");
+    }
+    public static final ConfigValue<Boolean> SHARE_TEAM_MEMORY = BUILDER.bool("shareTeamMemory", false)
+            .comment("Players on the same team share what they have seen in containers: each container one of them opens is remembered by their teammates who are online. Off, nobody learns what another player saw.").build();
     static {
         BUILDER.pop();
     }
