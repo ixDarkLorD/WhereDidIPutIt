@@ -1,5 +1,8 @@
 package net.ixdarklord.wheredidiputit.client.render;
 
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
@@ -31,7 +34,9 @@ import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.lwjgl.system.MemoryStack;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,7 +50,7 @@ import java.util.OptionalInt;
  * see-through one by one showed its inside and far faces (the author, 2026-10-21). Drawn with the world's own
  * projection, a ghost is in perspective from every side, which a picture of the block from one direction was not (a
  * CoolCatLib scene viewport, tried and dropped the same day). Chests and other block entities' models come out as the
- * game draws them.
+ * game draws them. They are unshaded, every face full bright ({@link #lights}), so they stand out through walls.
  * <p>
  * Each block is drawn a hair larger than itself ({@link #GROW}), so where the container is in plain sight its ghost is
  * just in front of it and the composite ({@code core/ghost}) leaves the real block showing.
@@ -54,6 +59,12 @@ public final class ContainerGhost {
     /** How much larger than the block its ghost is drawn, about its middle: a hundredth of a block on each side. */
     private static final float GROW = 1.02F;
     private static final int FULL_BRIGHT = 0xF000F0;
+    /**
+     * How strong the ghosts' two lights are. A face gets {@code 0.4 + 0.6 * (light0 . n + light1 . n)} of its colour,
+     * capped at 1 ({@code light.glsl}); two opposite lights this strong along a diagonal give any face of a block more
+     * than that, so every face is full bright.
+     */
+    private static final float LIGHT_STRENGTH = 10.0F;
     private static final BlockDisplayContext CONTEXT = BlockDisplayContext.create();
     private static final RenderPipeline COMPOSITE = RenderPipeline.builder()
             .withLocation(WhereDidIPutIt.id("pipeline/ghost"))
@@ -69,6 +80,7 @@ public final class ContainerGhost {
 
     private static @Nullable TextureTarget target;
     private static @Nullable BlockModelResolver resolver;
+    private static @Nullable GpuBuffer lights;
     // One model for each kind of block shown, made when it is first needed.
     private static final Map<BlockState, BlockModelRenderState> MODELS = new HashMap<>();
 
@@ -124,7 +136,7 @@ public final class ContainerGhost {
         try {
             if (resolver == null) resolver = new BlockModelResolver(minecraft.getModelManager());
             BlockModelResolver models = resolver;
-            minecraft.gameRenderer.getLighting().setupFor(Lighting.Entry.LEVEL);
+            RenderSystem.setShaderLights(lights());
             FeatureRenderDispatcher features = minecraft.gameRenderer.getFeatureRenderDispatcher();
             SubmitNodeStorage storage = features.getSubmitNodeStorage();
             PoseStack pose = new PoseStack();
@@ -148,10 +160,27 @@ public final class ContainerGhost {
             features.renderAllFeatures();
             minecraft.renderBuffers().bufferSource().endBatch();
         } finally {
+            minecraft.gameRenderer.getLighting().setupFor(Lighting.Entry.LEVEL);
             RenderSystem.outputColorTextureOverride = null;
             RenderSystem.outputDepthTextureOverride = null;
             modelView.popMatrix();
         }
+    }
+
+    // The ghosts' lights: one each way along a diagonal, so no face of a block is turned away from both.
+    private static GpuBufferSlice lights() {
+        if (lights == null) {
+            float strength = LIGHT_STRENGTH / (float) Math.sqrt(3.0);
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                ByteBuffer data = Std140Builder.onStack(stack, Lighting.UBO_SIZE)
+                        .putVec3(strength, strength, strength)
+                        .putVec3(-strength, -strength, -strength)
+                        .get();
+                lights = RenderSystem.getDevice().createBuffer(() -> "Where Did I Put It? ghost lights", GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, Lighting.UBO_SIZE);
+                RenderSystem.getDevice().createCommandEncoder().writeToBuffer(lights.slice(), data);
+            }
+        }
+        return lights.slice();
     }
 
     // The ghosts' picture over the world, where the world is in front of them.
