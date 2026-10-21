@@ -1,0 +1,116 @@
+package net.ixdarklord.wheredidiputit.client.screen;
+
+import net.ixdarklord.coolcatcanvas.api.client.utils.RenderUtils;
+import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.ARGB;
+import net.minecraft.util.Mth;
+
+/**
+ * The look the mod's screens share: a dark panel with a soft shadow, a header underlined in the highlight color, inset
+ * slots, slim scrollbars, rounded badges and fields. One place for the colors, so the screens stay alike.
+ */
+public final class ScreenStyle {
+    public static final int TEXT = 0xFFE6EDF3;
+    public static final int MUTED = 0xFF8B949E;
+    public static final int FAINT = 0xFF5A626D;
+    public static final int ROW = 0xFF171C24;
+    public static final int ROW_HOVER = 0xFF1E2530;
+    public static final int ROW_SELECTED = 0xFF233042;
+    public static final int DANGER = 0xFFE5534B;
+    public static final int HEADER_HEIGHT = 24;
+
+    private static final int SHADOW = 0x70000000;
+    private static final int PANEL_TOP = 0xF41A2029;
+    private static final int PANEL_BOTTOM = 0xF40F1319;
+    private static final int BORDER = 0xFF2F3743;
+    private static final int SHINE = 0x18FFFFFF;
+    private static final int HEADER = 0xFF1C232D;
+    private static final int SLOT = 0xFF0C1015;
+    private static final int SLOT_DARK = 0xFF080A0E;
+    private static final int SLOT_LIGHT = 0xFF2A313B;
+    private static final int FIELD = 0xFF0C1015;
+    private static final int TRACK = 0x40FFFFFF;
+
+    private ScreenStyle() {
+    }
+
+    /** The highlight color, opaque: the screens' accent, so they match what they point out. */
+    public static int accent() {
+        return 0xFF000000 | WDIPIClientConfig.HIGHLIGHT_COLOR.get();
+    }
+
+    /** A color with the accent mixed in, {@code amount} of the way. */
+    public static int tint(int color, float amount) {
+        return ARGB.srgbLerp(amount, color, accent());
+    }
+
+    /** The panel: a shadow, a body darkening downwards, a border and a faint shine along the top. */
+    public static void panel(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
+        graphics.fill(x + 3, y + 4, x + width + 3, y + height + 4, SHADOW);
+        RenderUtils.fillVerticalGradient(graphics, x, y, width, height, PANEL_TOP, PANEL_BOTTOM);
+        graphics.outline(x, y, width, height, BORDER);
+        graphics.fill(x + 1, y + 1, x + width - 1, y + 2, SHINE);
+    }
+
+    /** The header strip: the title on the left, a quieter note on the right, and an accent line under both. */
+    public static void header(GuiGraphicsExtractor graphics, Font font, int x, int y, int width, Component title, Component note) {
+        graphics.fill(x + 1, y + 1, x + width - 1, y + HEADER_HEIGHT, HEADER);
+        graphics.text(font, title, x + 8, y + 8, TEXT, false);
+        graphics.text(font, note, x + width - 8 - font.width(note), y + 8, MUTED, false);
+        RenderUtils.fillHorizontalGradient(graphics, x + 1, y + HEADER_HEIGHT, width - 2, 1, accent(), accent() & 0x00FFFFFF);
+    }
+
+    /** A slot as the game's look sets one in: darker along the top and left, lighter along the bottom and right. */
+    public static void slot(GuiGraphicsExtractor graphics, int x, int y) {
+        graphics.fill(x, y, x + 18, y + 18, SLOT);
+        graphics.fill(x, y, x + 18, y + 1, SLOT_DARK);
+        graphics.fill(x, y, x + 1, y + 18, SLOT_DARK);
+        graphics.fill(x, y + 17, x + 18, y + 18, SLOT_LIGHT);
+        graphics.fill(x + 17, y, x + 18, y + 18, SLOT_LIGHT);
+    }
+
+    /** A slot under the mouse: a light wash over what it holds. */
+    public static void slotHover(GuiGraphicsExtractor graphics, int x, int y) {
+        graphics.fill(x + 1, y + 1, x + 17, y + 17, 0x50FFFFFF);
+    }
+
+    /** A rectangle with its corners cut by a pixel, which reads as rounded at the GUI's scale. */
+    public static void rounded(GuiGraphicsExtractor graphics, int x, int y, int width, int height, int color) {
+        graphics.fill(x + 1, y, x + width - 1, y + height, color);
+        graphics.fill(x, y + 1, x + 1, y + height - 1, color);
+        graphics.fill(x + width - 1, y + 1, x + width, y + height - 1, color);
+    }
+
+    /** A small rounded label; returns its width, to set the next one after it. */
+    public static int badge(GuiGraphicsExtractor graphics, Font font, Component text, int x, int y, int background, int color) {
+        int width = font.width(text) + 8;
+        rounded(graphics, x, y, width, 11, background);
+        graphics.text(font, text, x + 4, y + 2, color, false);
+        return width;
+    }
+
+    /** The well a text field sits in, its border in the accent while it has focus. */
+    public static void field(GuiGraphicsExtractor graphics, int x, int y, int width, int height, boolean focused) {
+        rounded(graphics, x - 1, y - 1, width + 2, height + 2, focused ? accent() : BORDER);
+        rounded(graphics, x, y, width, height, FIELD);
+    }
+
+    /** A slim scrollbar, shown only when there is more than fits. */
+    public static void scrollbar(GuiGraphicsExtractor graphics, int x, int y, int height, int first, int shown, int total) {
+        if (total <= shown) return;
+        graphics.fill(x, y, x + 2, y + height, TRACK);
+        int thumb = Math.max(8, height * shown / total);
+        int top = y + Mth.floor((height - thumb) * (first / (float) Math.max(1, total - shown)));
+        graphics.fill(x, top, x + 2, top + thumb, accent());
+    }
+
+    /** A key shown as a keycap in a hint ("LMB"), then what it does; returns where the next hint starts. */
+    public static int hint(GuiGraphicsExtractor graphics, Font font, Component key, Component action, int x, int y) {
+        int width = badge(graphics, font, key, x, y, 0xFF2A313B, TEXT);
+        graphics.text(font, action, x + width + 4, y + 2, MUTED, false);
+        return x + width + 4 + font.width(action) + 10;
+    }
+}

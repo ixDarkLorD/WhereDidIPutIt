@@ -21,6 +21,7 @@ This file is for listing all the changes to this project
 - Ghosts are drawn by the game's own renderers with your camera and then made see-through as a whole, so they look like the real block from every side and up close: no inside or back faces show through, and nothing warps. They're unshaded and full bright, so they're easy to see through walls.
 - **Search screen** (Y): find any remembered item by name, `#tag` or `@mod`, without holding or hovering it. Left click shows the nearest container, right click all of them.
 - **Container browser** (K): every remembered container here, nearest first, searchable by name or contents, with what each held, and buttons to show it, skip it in searches, or forget it.
+- The search screen and the container browser have a cleaner look in the highlight color: a header, a search well, inset slots, scrollbars, badges and flat buttons. The browser can sort by nearest, most recent or name, and shows a glimpse of each container's items in its row.
 - **Skipping containers**: leave a container (a trash chest, a farm's output) out of searches with the browser or a key (unbound by default) while it's open. It's still remembered.
 - The item marker says how long ago a remembered container was last seen ("2m ago"), as what it holds may have changed since. It can be turned off.
 - The last-seen tooltip says how many of the item are stored in all: "(412 in 2 containers)".

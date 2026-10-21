@@ -22,27 +22,24 @@ import java.util.List;
 /**
  * Finds an item by name, for items the player isn't holding or hovering: every item remembered in the dimension's
  * containers, narrowed by what is typed ({@code #tag}, {@code @mod} or part of a name). Left click points out the
- * nearest container holding one, right click all of them, as the two find keys do.
+ * nearest container holding one, right click all of them, as the two find keys do. Drawn in the screens' shared look
+ * ({@link ScreenStyle}).
  */
 public final class SearchScreen extends Screen {
     private static final int COLUMNS = 9;
     private static final int ROWS = 6;
     private static final int SLOT = 18;
     private static final int PADDING = 8;
-    private static final int PANEL_WIDTH = COLUMNS * SLOT + PADDING * 2;
-    private static final int PANEL_HEIGHT = 20 + 18 + ROWS * SLOT + 22;
-    private static final int PANEL_COLOR = 0xE0101418;
-    private static final int BORDER_COLOR = 0xFF3C4450;
-    private static final int SLOT_COLOR = 0xFF2A3038;
-    private static final int HOVER_COLOR = 0x60FFFFFF;
-    private static final int TEXT_COLOR = 0xFFE0E0E0;
-    private static final int HINT_COLOR = 0xFF8A93A0;
+    private static final int PANEL_WIDTH = COLUMNS * SLOT + PADDING * 2 + 6;
+    private static final int GRID_TOP = 54;
+    private static final int PANEL_HEIGHT = GRID_TOP + ROWS * SLOT + 26;
 
     // What was typed last time, so reopening the screen picks up where it was.
     private static String lastQuery = "";
 
     private List<StoredStacks.Entry> all = List.of();
     private List<StoredStacks.Entry> shown = List.of();
+    private EditBox search;
     private int scroll;
     private int left;
     private int top;
@@ -57,16 +54,18 @@ public final class SearchScreen extends Screen {
         this.top = (this.height - PANEL_HEIGHT) / 2;
         DimensionMemory memory = this.minecraft.level != null ? ContainerMemory.dimension(this.minecraft.level.dimension()) : null;
         this.all = memory != null ? StoredStacks.collect(memory, WDIPIClientConfig.INDEX_NESTED_CONTENTS.get()) : List.of();
-        EditBox box = new EditBox(this.font, this.left + PADDING, this.top + 20, PANEL_WIDTH - PADDING * 2, 16, this.title);
-        box.setHint(Component.translatable("gui.wheredidiputit.search.hint").withStyle(ChatFormatting.DARK_GRAY));
-        box.setMaxLength(64);
-        box.setValue(lastQuery);
-        box.setResponder(query -> {
+        this.search = new EditBox(this.font, this.left + PADDING + 5, this.top + 35, PANEL_WIDTH - PADDING * 2 - 10, 10, this.title);
+        this.search.setBordered(false);
+        this.search.setTextColor(ScreenStyle.TEXT);
+        this.search.setHint(Component.translatable("gui.wheredidiputit.search.hint").withStyle(ChatFormatting.DARK_GRAY));
+        this.search.setMaxLength(64);
+        this.search.setValue(lastQuery);
+        this.search.setResponder(query -> {
             lastQuery = query;
             this.filter();
         });
-        this.addRenderableWidget(box);
-        this.setInitialFocus(box);
+        this.addRenderableWidget(this.search);
+        this.setInitialFocus(this.search);
         this.filter();
     }
 
@@ -80,37 +79,49 @@ public final class SearchScreen extends Screen {
     }
 
     private int maxScroll() {
-        return Math.max(0, (this.shown.size() + COLUMNS - 1) / COLUMNS - ROWS);
+        return Math.max(0, this.rows() - ROWS);
+    }
+
+    private int rows() {
+        return (this.shown.size() + COLUMNS - 1) / COLUMNS;
     }
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
-        graphics.fill(this.left, this.top, this.left + PANEL_WIDTH, this.top + PANEL_HEIGHT, PANEL_COLOR);
-        graphics.outline(this.left, this.top, PANEL_WIDTH, PANEL_HEIGHT, BORDER_COLOR);
-        graphics.text(this.font, this.title, this.left + PADDING, this.top + 7, TEXT_COLOR, false);
+        ScreenStyle.panel(graphics, this.left, this.top, PANEL_WIDTH, PANEL_HEIGHT);
+        ScreenStyle.header(graphics, this.font, this.left, this.top, PANEL_WIDTH, this.title,
+                Component.translatable("gui.wheredidiputit.search.count", this.shown.size()));
+        ScreenStyle.field(graphics, this.left + PADDING, this.top + 31, PANEL_WIDTH - PADDING * 2, 16, this.search.isFocused());
         super.extractRenderState(graphics, mouseX, mouseY, a);
 
-        int gridTop = this.gridTop();
+        int gridLeft = this.left + PADDING;
+        int gridTop = this.top + GRID_TOP;
         int hovered = this.slotAt(mouseX, mouseY);
         for (int row = 0; row < ROWS; row++) {
             for (int column = 0; column < COLUMNS; column++) {
-                int x = this.left + PADDING + column * SLOT;
+                int x = gridLeft + column * SLOT;
                 int y = gridTop + row * SLOT;
-                graphics.fill(x, y, x + SLOT - 1, y + SLOT - 1, SLOT_COLOR);
+                ScreenStyle.slot(graphics, x, y);
                 int index = (this.scroll + row) * COLUMNS + column;
                 if (index >= this.shown.size()) continue;
                 StoredStacks.Entry entry = this.shown.get(index);
-                graphics.item(entry.stack(), x, y);
-                graphics.itemDecorations(this.font, entry.stack(), x, y, ItemMarker.count(entry.count()));
-                if (index == hovered) graphics.fill(x, y, x + 16, y + 16, HOVER_COLOR);
+                graphics.item(entry.stack(), x + 1, y + 1);
+                graphics.itemDecorations(this.font, entry.stack(), x + 1, y + 1, ItemMarker.count(entry.count()));
+                if (index == hovered) ScreenStyle.slotHover(graphics, x, y);
             }
         }
+        ScreenStyle.scrollbar(graphics, gridLeft + COLUMNS * SLOT + 2, gridTop, ROWS * SLOT, this.scroll, ROWS, this.rows());
         if (this.shown.isEmpty()) {
             Component empty = Component.translatable(this.all.isEmpty() ? "gui.wheredidiputit.search.nothing" : "gui.wheredidiputit.search.no_match");
-            graphics.centeredText(this.font, empty, this.left + PANEL_WIDTH / 2, gridTop + ROWS * SLOT / 2 - 4, HINT_COLOR);
+            int middle = gridLeft + COLUMNS * SLOT / 2;
+            graphics.fill(gridLeft + 1, gridTop + ROWS * SLOT / 2 - 9, gridLeft + COLUMNS * SLOT - 1, gridTop + ROWS * SLOT / 2 + 9, 0xC00C1015);
+            graphics.centeredText(this.font, empty, middle, gridTop + ROWS * SLOT / 2 - 4, ScreenStyle.MUTED);
         }
-        graphics.centeredText(this.font, Component.translatable("gui.wheredidiputit.search.help"), this.left + PANEL_WIDTH / 2,
-                this.top + PANEL_HEIGHT - 14, HINT_COLOR);
+        int hintY = this.top + PANEL_HEIGHT - PADDING - 11;
+        int next = ScreenStyle.hint(graphics, this.font, Component.translatable("gui.wheredidiputit.search.left_key"), Component.translatable("gui.wheredidiputit.search.left_action"),
+                gridLeft, hintY);
+        ScreenStyle.hint(graphics, this.font, Component.translatable("gui.wheredidiputit.search.right_key"), Component.translatable("gui.wheredidiputit.search.right_action"),
+                next, hintY);
         if (hovered >= 0) {
             StoredStacks.Entry entry = this.shown.get(hovered);
             List<Component> lines = new ArrayList<>(getTooltipFromItem(this.minecraft, entry.stack()));
@@ -120,15 +131,11 @@ public final class SearchScreen extends Screen {
         ScreenNotice.extract(graphics, this.left + PANEL_WIDTH / 2, this.top);
     }
 
-    private int gridTop() {
-        return this.top + 40;
-    }
-
     // The index in the shown list of the slot under the mouse, or -1.
     private int slotAt(double mouseX, double mouseY) {
         int column = Mth.floor((mouseX - this.left - PADDING) / SLOT);
-        int row = Mth.floor((mouseY - this.gridTop()) / SLOT);
-        if (column < 0 || column >= COLUMNS || row < 0 || row >= ROWS) return -1;
+        int row = Mth.floor((mouseY - this.top - GRID_TOP) / SLOT);
+        if (column < 0 || column >= COLUMNS || row < 0 || row >= ROWS || mouseX < this.left + PADDING || mouseY < this.top + GRID_TOP) return -1;
         int index = (this.scroll + row) * COLUMNS + column;
         return index < this.shown.size() ? index : -1;
     }

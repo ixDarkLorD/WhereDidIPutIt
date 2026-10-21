@@ -10,7 +10,6 @@ import net.ixdarklord.wheredidiputit.memory.DimensionMemory;
 import net.ixdarklord.wheredidiputit.memory.StoredItem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -30,31 +29,38 @@ import java.util.Locale;
 import java.util.UUID;
 
 /**
- * Every container remembered in the player's dimension, nearest first, narrowed by name or by what they hold. The one
- * picked shows what it held when last seen, and can be pointed out, left out of searches (or taken back in) or
- * forgotten.
+ * Every container remembered in the player's dimension, nearest first (or most recently seen, or by name), narrowed by
+ * name or by what they hold. The one picked shows what it held when last seen, and can be pointed out, skipped in
+ * searches (or taken back in) or forgotten. Drawn in the screens' shared look ({@link ScreenStyle}).
  */
 public final class ContainerBrowserScreen extends Screen {
-    private static final int LIST_WIDTH = 190;
-    private static final int ROW_HEIGHT = 22;
+    private static final int PANEL_WIDTH = 388;
+    private static final int PANEL_HEIGHT = 250;
+    private static final int PADDING = 8;
+    private static final int LIST_WIDTH = 196;
+    private static final int ROW_HEIGHT = 21;
     private static final int LIST_ROWS = 8;
     private static final int COLUMNS = 9;
-    private static final int GRID_ROWS = 5;
+    private static final int GRID_ROWS = 7;
     private static final int SLOT = 18;
-    private static final int PADDING = 8;
-    private static final int DETAIL_WIDTH = COLUMNS * SLOT + PADDING * 2;
-    private static final int PANEL_WIDTH = LIST_WIDTH + DETAIL_WIDTH + PADDING;
-    private static final int PANEL_HEIGHT = 40 + LIST_ROWS * ROW_HEIGHT + PADDING;
-    private static final int PANEL_COLOR = 0xE0101418;
-    private static final int BORDER_COLOR = 0xFF3C4450;
-    private static final int ROW_COLOR = 0xFF20262E;
-    private static final int SELECTED_COLOR = 0xFF34404E;
-    private static final int HOVER_COLOR = 0x30FFFFFF;
-    private static final int SLOT_COLOR = 0xFF2A3038;
-    private static final int TEXT_COLOR = 0xFFE0E0E0;
-    private static final int DIM_COLOR = 0xFF8A93A0;
+    /** How many of a container's items its row shows, small, on its right. */
+    private static final int PREVIEW_ITEMS = 3;
+
+    /** How the list is ordered; the choice is kept while the game runs. */
+    private enum Sort {
+        NEAREST, RECENT, NAME;
+
+        Sort next() {
+            return values()[(this.ordinal() + 1) % values().length];
+        }
+
+        Component label() {
+            return Component.translatable("gui.wheredidiputit.browser.sort." + this.name().toLowerCase(Locale.ROOT));
+        }
+    }
 
     private static String lastQuery = "";
+    private static Sort sort = Sort.NEAREST;
 
     private @Nullable DimensionMemory memory;
     private List<ContainerRecord> shown = List.of();
@@ -64,9 +70,11 @@ public final class ContainerBrowserScreen extends Screen {
     private int gridScroll;
     private int left;
     private int top;
-    private Button showButton;
-    private Button ignoreButton;
-    private Button forgetButton;
+    private EditBox search;
+    private FlatButton sortButton;
+    private FlatButton showButton;
+    private FlatButton ignoreButton;
+    private FlatButton forgetButton;
 
     public ContainerBrowserScreen() {
         super(Component.translatable("gui.wheredidiputit.browser.title"));
@@ -77,30 +85,37 @@ public final class ContainerBrowserScreen extends Screen {
         this.left = (this.width - PANEL_WIDTH) / 2;
         this.top = (this.height - PANEL_HEIGHT) / 2;
         this.memory = this.minecraft.level != null ? ContainerMemory.dimension(this.minecraft.level.dimension()) : null;
-        EditBox box = new EditBox(this.font, this.left + PADDING, this.top + 20, LIST_WIDTH - PADDING, 16, this.title);
-        box.setHint(Component.translatable("gui.wheredidiputit.browser.hint").withStyle(ChatFormatting.DARK_GRAY));
-        box.setMaxLength(64);
-        box.setValue(lastQuery);
-        box.setResponder(query -> {
+
+        this.search = new EditBox(this.font, this.listLeft() + 5, this.top + 35, LIST_WIDTH - 66, 10, this.title);
+        this.search.setBordered(false);
+        this.search.setTextColor(ScreenStyle.TEXT);
+        this.search.setHint(Component.translatable("gui.wheredidiputit.browser.hint").withStyle(ChatFormatting.DARK_GRAY));
+        this.search.setMaxLength(64);
+        this.search.setValue(lastQuery);
+        this.search.setResponder(query -> {
             lastQuery = query;
             this.refresh();
         });
-        this.addRenderableWidget(box);
-        this.setInitialFocus(box);
+        this.addRenderableWidget(this.search);
+        this.setInitialFocus(this.search);
+        this.sortButton = this.addRenderableWidget(new FlatButton(this.listLeft() + LIST_WIDTH - 54, this.top + 31, 54, 16, sort.label(), FlatButton.Kind.PLAIN, () -> {
+            sort = sort.next();
+            this.sortButton.setMessage(sort.label());
+            this.refresh();
+        }));
 
-        int detailLeft = this.detailLeft();
-        int buttonY = this.top + PANEL_HEIGHT - PADDING - 20;
-        int buttonWidth = (DETAIL_WIDTH - PADDING * 2 - 4) / 3;
-        this.showButton = this.addRenderableWidget(Button.builder(Component.translatable("gui.wheredidiputit.browser.show"), button -> this.showSelected())
-                .bounds(detailLeft + PADDING, buttonY, buttonWidth, 20).build());
-        this.ignoreButton = this.addRenderableWidget(Button.builder(Component.empty(), button -> this.toggleIgnored())
-                .bounds(detailLeft + PADDING + buttonWidth + 2, buttonY, buttonWidth, 20).build());
-        this.forgetButton = this.addRenderableWidget(Button.builder(Component.translatable("gui.wheredidiputit.browser.forget"), button -> this.forgetSelected())
-                .bounds(detailLeft + PADDING + (buttonWidth + 2) * 2, buttonY, buttonWidth, 20).build());
+        int buttonY = this.top + PANEL_HEIGHT - PADDING - 16;
+        int buttonWidth = (this.detailWidth() - 4) / 3;
+        this.showButton = this.addRenderableWidget(new FlatButton(this.detailLeft(), buttonY, buttonWidth, 16,
+                Component.translatable("gui.wheredidiputit.browser.show"), FlatButton.Kind.PRIMARY, this::showSelected));
+        this.ignoreButton = this.addRenderableWidget(new FlatButton(this.detailLeft() + buttonWidth + 2, buttonY, buttonWidth, 16,
+                Component.empty(), FlatButton.Kind.PLAIN, this::toggleIgnored));
+        this.forgetButton = this.addRenderableWidget(new FlatButton(this.detailLeft() + (buttonWidth + 2) * 2, buttonY, buttonWidth, 16,
+                Component.translatable("gui.wheredidiputit.browser.forget"), FlatButton.Kind.DANGER, this::forgetSelected));
         this.refresh();
     }
 
-    // The list again, after the query or memory changed.
+    // The list again, after the query, the order or the memory changed.
     private void refresh() {
         List<ContainerRecord> matching = new ArrayList<>();
         if (this.memory != null) {
@@ -108,12 +123,18 @@ public final class ContainerBrowserScreen extends Screen {
                 if (this.fits(record)) matching.add(record);
             }
         }
-        Vec3 from = this.minecraft.player != null ? this.minecraft.player.position() : Vec3.ZERO;
-        matching.sort(Comparator.comparingDouble(record -> Vec3.atCenterOf(record.pos()).distanceToSqr(from)));
+        Vec3 from = this.from();
+        matching.sort(switch (sort) {
+            case NEAREST -> Comparator.comparingDouble(record -> Vec3.atCenterOf(record.pos()).distanceToSqr(from));
+            case RECENT -> Comparator.comparingLong(ContainerRecord::seenAt).reversed();
+            case NAME -> Comparator.comparing(record -> FindMessages.name(record).getString().toLowerCase(Locale.ROOT));
+        });
         this.shown = matching;
         this.listScroll = Mth.clamp(this.listScroll, 0, Math.max(0, this.shown.size() - LIST_ROWS));
-        if (this.selected() == null) this.selected = null;
-        if (this.selectedEntity != null && (this.memory == null || this.memory.getEntity(this.selectedEntity) == null)) this.selectedEntity = null;
+        if (this.selected() == null) {
+            this.selected = null;
+            this.selectedEntity = null;
+        }
         this.updateButtons();
     }
 
@@ -121,7 +142,8 @@ public final class ContainerBrowserScreen extends Screen {
     private boolean fits(ContainerRecord record) {
         String query = lastQuery.trim();
         if (query.isEmpty()) return true;
-        if (!query.startsWith("#") && !query.startsWith("@") && FindMessages.name(record).getString().toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT))) {
+        if (!query.startsWith("#") && !query.startsWith("@")
+                && FindMessages.name(record).getString().toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT))) {
             return true;
         }
         for (StoredItem item : record.items()) {
@@ -134,6 +156,10 @@ public final class ContainerBrowserScreen extends Screen {
         if (this.memory == null) return null;
         if (this.selectedEntity != null) return this.memory.getEntity(this.selectedEntity);
         return this.selected != null ? this.memory.get(this.selected) : null;
+    }
+
+    private boolean isSelected(ContainerRecord record) {
+        return record.entity() != null ? record.entity().equals(this.selectedEntity) : this.selectedEntity == null && record.pos().equals(this.selected);
     }
 
     private void updateButtons() {
@@ -181,91 +207,154 @@ public final class ContainerBrowserScreen extends Screen {
         return stack.isEmpty() ? new ItemStack(Items.CHEST) : stack;
     }
 
-    private int detailLeft() {
-        return this.left + LIST_WIDTH + PADDING;
+    private Vec3 from() {
+        return this.minecraft.player != null ? this.minecraft.player.position() : Vec3.ZERO;
+    }
+
+    private int listLeft() {
+        return this.left + PADDING;
     }
 
     private int listTop() {
-        return this.top + 40;
+        return this.top + 54;
+    }
+
+    private int detailLeft() {
+        return this.left + PADDING + LIST_WIDTH + 12;
+    }
+
+    private int detailWidth() {
+        return PANEL_WIDTH - (this.detailLeft() - this.left) - PADDING;
     }
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
-        graphics.fill(this.left, this.top, this.left + PANEL_WIDTH, this.top + PANEL_HEIGHT, PANEL_COLOR);
-        graphics.outline(this.left, this.top, PANEL_WIDTH, PANEL_HEIGHT, BORDER_COLOR);
-        graphics.text(this.font, this.title, this.left + PADDING, this.top + 7, TEXT_COLOR, false);
-        graphics.text(this.font, Component.translatable("gui.wheredidiputit.browser.count", this.shown.size()), this.detailLeft() + PADDING,
-                this.top + 7, DIM_COLOR, false);
+        ScreenStyle.panel(graphics, this.left, this.top, PANEL_WIDTH, PANEL_HEIGHT);
+        int total = this.memory != null ? this.memory.records().size() : 0;
+        ScreenStyle.header(graphics, this.font, this.left, this.top, PANEL_WIDTH, this.title, Component.translatable("gui.wheredidiputit.browser.count", total));
+        ScreenStyle.field(graphics, this.listLeft(), this.top + 31, LIST_WIDTH - 58, 16, this.search.isFocused());
+        // The divider between the list and the picked container.
+        graphics.fill(this.detailLeft() - 7, this.top + ScreenStyle.HEADER_HEIGHT + 8, this.detailLeft() - 6, this.top + PANEL_HEIGHT - PADDING, 0xFF2A313B);
         super.extractRenderState(graphics, mouseX, mouseY, a);
         this.extractList(graphics, mouseX, mouseY);
         this.extractDetail(graphics, mouseX, mouseY);
+        ScreenStyle.hint(graphics, this.font, Component.translatable("gui.wheredidiputit.browser.hint_key"), Component.translatable("gui.wheredidiputit.browser.hint_action"),
+                this.listLeft(), this.top + PANEL_HEIGHT - PADDING - 12);
     }
 
     private void extractList(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        int x = this.left + PADDING;
+        int x = this.listLeft();
+        int width = LIST_WIDTH - 4;
         int hovered = this.rowAt(mouseX, mouseY);
-        Vec3 from = this.minecraft.player != null ? this.minecraft.player.position() : Vec3.ZERO;
+        Vec3 from = this.from();
         for (int row = 0; row < LIST_ROWS; row++) {
             int index = this.listScroll + row;
             if (index >= this.shown.size()) break;
             ContainerRecord record = this.shown.get(index);
             int y = this.listTop() + row * ROW_HEIGHT;
-            boolean picked = record.entity() != null ? record.entity().equals(this.selectedEntity) : this.selectedEntity == null && record.pos().equals(this.selected);
-            graphics.fill(x, y, x + LIST_WIDTH - PADDING, y + ROW_HEIGHT - 2, picked ? SELECTED_COLOR : ROW_COLOR);
-            if (index == hovered) graphics.fill(x, y, x + LIST_WIDTH - PADDING, y + ROW_HEIGHT - 2, HOVER_COLOR);
-            graphics.item(icon(record), x + 2, y + 2);
-            int textColor = record.ignored() ? DIM_COLOR : TEXT_COLOR;
+            boolean picked = this.isSelected(record);
+            ScreenStyle.rounded(graphics, x, y, width, ROW_HEIGHT - 2, picked ? ScreenStyle.ROW_SELECTED : index == hovered ? ScreenStyle.ROW_HOVER : ScreenStyle.ROW);
+            if (picked) graphics.fill(x, y + 2, x + 2, y + ROW_HEIGHT - 4, ScreenStyle.accent());
+            graphics.item(icon(record), x + 4, y + 1);
+
+            int textLeft = x + 24;
+            int previewWidth = record.ignored() ? 0 : Math.min(PREVIEW_ITEMS, record.items().size()) * 9;
             Component name = FindMessages.name(record);
-            if (record.ignored()) name = Component.translatable("gui.wheredidiputit.browser.left_out", name);
-            graphics.text(this.font, this.font.plainSubstrByWidth(name.getString(), LIST_WIDTH - PADDING - 26), x + 22, y + 2, textColor, false);
+            int nameRoom = width - (textLeft - x) - (record.ignored() ? 50 : previewWidth + 4);
+            graphics.text(this.font, this.font.plainSubstrByWidth(name.getString(), nameRoom), textLeft, y + 2, record.ignored() ? ScreenStyle.MUTED : ScreenStyle.TEXT, false);
             int distance = Mth.floor(Vec3.atCenterOf(record.pos()).distanceTo(from));
-            Component age = ItemMarker.age(System.currentTimeMillis() - record.seenAt());
-            Component detail = Component.translatable("gui.wheredidiputit.browser.row", distance,
-                    age != null ? age : Component.translatable("gui.wheredidiputit.browser.just_now"));
-            graphics.text(this.font, detail, x + 22, y + 11, DIM_COLOR, false);
+            graphics.text(this.font, Component.translatable("gui.wheredidiputit.browser.row", distance, age(record)), textLeft, y + 11, ScreenStyle.FAINT, false);
+
+            if (record.ignored()) {
+                Component skipped = Component.translatable("gui.wheredidiputit.browser.skipped");
+                ScreenStyle.badge(graphics, this.font, skipped, x + width - this.font.width(skipped) - 12, y + 4, 0xFF3A2F1E, 0xFFE3B341);
+            } else {
+                // A glimpse of what it holds: its first few items, half size.
+                for (int i = 0; i < Math.min(PREVIEW_ITEMS, record.items().size()); i++) {
+                    graphics.pose().pushMatrix();
+                    graphics.pose().translate(x + width - previewWidth - 2 + i * 9, y + 5);
+                    graphics.pose().scale(0.5F, 0.5F);
+                    graphics.item(record.items().get(i).stack(), 0, 0);
+                    graphics.pose().popMatrix();
+                }
+            }
         }
         if (this.shown.isEmpty()) {
-            graphics.centeredText(this.font, Component.translatable("gui.wheredidiputit.browser.empty"), this.left + PADDING + (LIST_WIDTH - PADDING) / 2,
-                    this.listTop() + LIST_ROWS * ROW_HEIGHT / 2 - 4, DIM_COLOR);
+            Component empty = Component.translatable(this.memory == null || this.memory.records().isEmpty() ? "gui.wheredidiputit.search.nothing" : "gui.wheredidiputit.browser.empty");
+            graphics.centeredText(this.font, empty, x + width / 2, this.listTop() + LIST_ROWS * ROW_HEIGHT / 2 - 4, ScreenStyle.MUTED);
         }
+        ScreenStyle.scrollbar(graphics, x + LIST_WIDTH - 2, this.listTop(), LIST_ROWS * ROW_HEIGHT - 2, this.listScroll, LIST_ROWS, this.shown.size());
     }
 
     private void extractDetail(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         ContainerRecord record = this.selected();
-        int x = this.detailLeft() + PADDING;
-        int y = this.listTop();
+        int x = this.detailLeft();
+        int y = this.top + 31;
         if (record == null) {
-            graphics.text(this.font, Component.translatable("gui.wheredidiputit.browser.pick"), x, y, DIM_COLOR, false);
+            int middle = x + this.detailWidth() / 2;
+            int center = this.top + PANEL_HEIGHT / 2 - 8;
+            graphics.centeredText(this.font, Component.translatable("gui.wheredidiputit.browser.pick"), middle, center, ScreenStyle.MUTED);
+            graphics.centeredText(this.font, Component.translatable("gui.wheredidiputit.browser.pick_more"), middle, center + 11, ScreenStyle.FAINT);
             return;
         }
+        ScreenStyle.slot(graphics, x, y);
+        graphics.item(icon(record), x + 1, y + 1);
+        int textLeft = x + 24;
+        graphics.text(this.font, this.font.plainSubstrByWidth(FindMessages.name(record).getString(), this.detailWidth() - 24), textLeft, y + 1, ScreenStyle.TEXT, false);
         BlockPos pos = record.pos();
-        graphics.text(this.font, this.font.plainSubstrByWidth(FindMessages.name(record).getString(), DETAIL_WIDTH - PADDING * 2), x, y, TEXT_COLOR, false);
-        graphics.text(this.font, Component.translatable("gui.wheredidiputit.browser.position", pos.getX(), pos.getY(), pos.getZ()), x, y + 10, DIM_COLOR, false);
-        int gridTop = y + 24;
+        graphics.text(this.font, Component.translatable("gui.wheredidiputit.browser.position", pos.getX(), pos.getY(), pos.getZ()), textLeft, y + 10, ScreenStyle.MUTED, false);
+
+        int badgeX = x;
+        int badgeY = y + 23;
+        int distance = Mth.floor(Vec3.atCenterOf(pos).distanceTo(this.from()));
+        badgeX += ScreenStyle.badge(graphics, this.font, Component.translatable("gui.wheredidiputit.browser.blocks", distance), badgeX, badgeY, 0xFF262D37, ScreenStyle.TEXT) + 3;
+        badgeX += ScreenStyle.badge(graphics, this.font, age(record), badgeX, badgeY, 0xFF262D37, ScreenStyle.TEXT) + 3;
+        Component kind = record.entity() != null ? Component.translatable("gui.wheredidiputit.browser.entity")
+                : record.network() ? Component.translatable("gui.wheredidiputit.browser.network")
+                : record.slots() > 0 ? Component.translatable("gui.wheredidiputit.browser.slots", record.slots()) : null;
+        if (kind != null) ScreenStyle.badge(graphics, this.font, kind, badgeX, badgeY, ScreenStyle.tint(0xFF262D37, 0.25F), ScreenStyle.TEXT);
+
+        int gridTop = y + 40;
+        graphics.text(this.font, Component.translatable("gui.wheredidiputit.browser.contents"), x, gridTop, ScreenStyle.TEXT, false);
+        Component stacks = Component.translatable("gui.wheredidiputit.browser.stacks", record.items().size());
+        graphics.text(this.font, stacks, x + this.detailWidth() - this.font.width(stacks), gridTop, ScreenStyle.FAINT, false);
+        gridTop += 11;
         StoredItem hoveredItem = null;
         for (int row = 0; row < GRID_ROWS; row++) {
             for (int column = 0; column < COLUMNS; column++) {
                 int slotX = x + column * SLOT;
                 int slotY = gridTop + row * SLOT;
-                graphics.fill(slotX, slotY, slotX + SLOT - 1, slotY + SLOT - 1, SLOT_COLOR);
+                ScreenStyle.slot(graphics, slotX, slotY);
                 int index = (this.gridScroll + row) * COLUMNS + column;
                 if (index >= record.items().size()) continue;
                 StoredItem item = record.items().get(index);
-                graphics.item(item.stack(), slotX, slotY);
-                graphics.itemDecorations(this.font, item.stack(), slotX, slotY, ItemMarker.count(item.count()));
-                if (mouseX >= slotX && mouseX < slotX + 16 && mouseY >= slotY && mouseY < slotY + 16) hoveredItem = item;
+                graphics.item(item.stack(), slotX + 1, slotY + 1);
+                graphics.itemDecorations(this.font, item.stack(), slotX + 1, slotY + 1, ItemMarker.count(item.count()));
+                if (mouseX >= slotX && mouseX < slotX + SLOT && mouseY >= slotY && mouseY < slotY + SLOT) {
+                    ScreenStyle.slotHover(graphics, slotX, slotY);
+                    hoveredItem = item;
+                }
             }
         }
-        if (record.items().isEmpty()) graphics.text(this.font, Component.translatable("gui.wheredidiputit.browser.empty_container"), x, gridTop + 4, DIM_COLOR, false);
+        int rows = (record.items().size() + COLUMNS - 1) / COLUMNS;
+        ScreenStyle.scrollbar(graphics, x + COLUMNS * SLOT + 1, gridTop, GRID_ROWS * SLOT, this.gridScroll, GRID_ROWS, rows);
+        if (record.items().isEmpty()) {
+            graphics.centeredText(this.font, Component.translatable("gui.wheredidiputit.browser.empty_container"), x + COLUMNS * SLOT / 2, gridTop + 2 * SLOT + 5, ScreenStyle.MUTED);
+        }
         if (hoveredItem != null) graphics.setTooltipForNextFrame(this.font, hoveredItem.stack(), mouseX, mouseY);
+    }
+
+    private static Component age(ContainerRecord record) {
+        Component age = ItemMarker.age(System.currentTimeMillis() - record.seenAt());
+        return age != null ? age : Component.translatable("gui.wheredidiputit.browser.just_now");
     }
 
     // The index in the shown list of the row under the mouse, or -1.
     private int rowAt(double mouseX, double mouseY) {
-        int x = this.left + PADDING;
-        if (mouseX < x || mouseX >= x + LIST_WIDTH - PADDING) return -1;
+        int x = this.listLeft();
+        if (mouseX < x || mouseX >= x + LIST_WIDTH - 4 || mouseY < this.listTop()) return -1;
         int row = Mth.floor((mouseY - this.listTop()) / ROW_HEIGHT);
-        if (row < 0 || row >= LIST_ROWS) return -1;
+        if (row >= LIST_ROWS) return -1;
         int index = this.listScroll + row;
         return index < this.shown.size() ? index : -1;
     }
@@ -288,7 +377,7 @@ public final class ContainerBrowserScreen extends Screen {
     public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
         if (scrollY == 0.0) return super.mouseScrolled(x, y, scrollX, scrollY);
         int step = -(int) Math.signum(scrollY);
-        if (x < this.detailLeft()) {
+        if (x < this.detailLeft() - 6) {
             this.listScroll = Mth.clamp(this.listScroll + step, 0, Math.max(0, this.shown.size() - LIST_ROWS));
         } else {
             ContainerRecord record = this.selected();
