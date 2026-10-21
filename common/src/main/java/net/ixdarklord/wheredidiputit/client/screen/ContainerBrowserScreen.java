@@ -238,8 +238,9 @@ public final class ContainerBrowserScreen extends Screen {
         super.extractRenderState(graphics, mouseX, mouseY, a);
         this.extractList(graphics, mouseX, mouseY);
         this.extractDetail(graphics, mouseX, mouseY);
-        ScreenStyle.hint(graphics, this.font, Component.translatable("gui.wheredidiputit.browser.hint_key"), Component.translatable("gui.wheredidiputit.browser.hint_action"),
-                this.listLeft(), this.top + PANEL_HEIGHT - PADDING - 12);
+        // Centred under the list it is about.
+        ScreenStyle.hints(graphics, this.font, this.listLeft() + (LIST_WIDTH - 4) / 2, this.top + PANEL_HEIGHT - PADDING - 12,
+                Component.translatable("gui.wheredidiputit.browser.hint_key"), Component.translatable("gui.wheredidiputit.browser.hint_action"));
     }
 
     private void extractList(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {

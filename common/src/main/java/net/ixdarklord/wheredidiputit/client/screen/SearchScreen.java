@@ -118,10 +118,9 @@ public final class SearchScreen extends Screen {
             graphics.centeredText(this.font, empty, middle, gridTop + ROWS * SLOT / 2 - 4, ScreenStyle.MUTED);
         }
         int hintY = this.top + PANEL_HEIGHT - PADDING - 11;
-        int next = ScreenStyle.hint(graphics, this.font, Component.translatable("gui.wheredidiputit.search.left_key"), Component.translatable("gui.wheredidiputit.search.left_action"),
-                gridLeft, hintY);
-        ScreenStyle.hint(graphics, this.font, Component.translatable("gui.wheredidiputit.search.right_key"), Component.translatable("gui.wheredidiputit.search.right_action"),
-                next, hintY);
+        ScreenStyle.hints(graphics, this.font, this.left + PANEL_WIDTH / 2, hintY,
+                Component.translatable("gui.wheredidiputit.search.left_key"), Component.translatable("gui.wheredidiputit.search.left_action"),
+                Component.translatable("gui.wheredidiputit.search.right_key"), Component.translatable("gui.wheredidiputit.search.right_action"));
         if (hovered >= 0) {
             StoredStacks.Entry entry = this.shown.get(hovered);
             List<Component> lines = new ArrayList<>(getTooltipFromItem(this.minecraft, entry.stack()));
