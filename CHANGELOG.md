@@ -17,4 +17,5 @@ This file is for listing all the changes to this project
 - Ghosts are pixel-sharp, and chests (single and double, normal, trapped and copper) show as themselves.
 - **Match modes**: the item tag mode matches items of the same kind (any log for an oak log) but leaves out tags about what items are used for, so a diamond no longer turns up iron. The tags it leaves out are a setting. The item shown over a container is the one found there.
 - **Live search**: on a server with the mod (and in singleplayer), the find keys ask the server, which looks in the real containers round you, so results are always up to date, even for containers you never opened. The server decides how far and how often, skips containers you couldn't open (locked, protected, unlooted) and only says where the item is and how much, never what else a container holds. Without it, or if the server says no, searches use what you remember.
-- On NeoForge, the mod no longer stops you joining servers that don't have it (needs the matching CoolCatLib).
+- On NeoForge, the mod no longer stops you joining servers that don't have it, as long as they have CoolCatLib (needs the matching CoolCatLib).
+- Ghosts are drawn as one picture of the container, so they look like the real block from every side: no more inside or back faces showing through.

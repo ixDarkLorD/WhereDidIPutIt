@@ -8,7 +8,6 @@ import net.ixdarklord.coolcatcore.api.event.v2.client.ClientPlayerEvents;
 import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
@@ -21,11 +20,10 @@ import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The containers a search found, pointed out for the highlight duration: a glowing outline round each, seen through
@@ -40,16 +38,12 @@ import java.util.Map;
  * a round cap, so the glow rounds each corner instead of being cut there (the corner discs' own glow showed as
  * circles, 2026-10-21).
  * <p>
- * The ghost ({@code vfx/ghost}): the block's own model faces, each in its sprite's texture ({@link ContainerGhost}),
- * the ones turned to the camera, drawn only where they are hidden.
+ * The ghost ({@code vfx/ghost}): a picture of the container drawn by the game's own renderers, laid over it at one
+ * opacity where it is hidden ({@link ContainerGhost}).
  */
 public final class ContainerHighlight {
     private static final VfxMaterial LINE = VfxMaterial.alpha(VfxMaterial.GLOW).withSoftness(0.0F).withShader(WhereDidIPutIt.id("vfx/outline_line"));
     private static final VfxMaterial DOT = VfxMaterial.alpha(VfxMaterial.GLOW).withSoftness(0.0F).withShader(WhereDidIPutIt.id("vfx/outline_dot"));
-    private static final Identifier GHOST_SHADER = WhereDidIPutIt.id("vfx/ghost");
-    // One ghost material per texture: a material is a texture, a blend and a shader. Not smoothed, so block pixels stay
-    // crisp as on the block itself.
-    private static final Map<Identifier, VfxMaterial> GHOSTS = new HashMap<>();
     private static final long FADE_IN_MILLIS = 150L;
     private static final long FADE_OUT_MILLIS = 700L;
     // Pushed out from the block a little, so the lines don't sit in its faces and flicker against them.
@@ -80,7 +74,7 @@ public final class ContainerHighlight {
         for (Found container : found) {
             List<BlockPos> blocks = blocks(level, container.pos());
             AABB shape = shape(level, blocks);
-            List<ContainerGhost.Face> ghost = WDIPIClientConfig.GHOST.get() ? ContainerGhost.build(level, blocks, shape) : List.of();
+            ContainerGhost.Ghost ghost = WDIPIClientConfig.GHOST.get() ? ContainerGhost.build(level, shown.size(), blocks, shape) : null;
             shown.add(new Target(level.dimension(), container.pos(), shape.inflate(INFLATE), ghost, container.item().copyWithCount(1),
                     container.count(), now, end));
         }
@@ -107,17 +101,8 @@ public final class ContainerHighlight {
         VfxDraw dots = frame.draw(DOT);
         for (Target target : current) {
             float alpha = target.alpha(now);
-            drawGhost(frame, camera, target.ghost, ARGB.color(Math.round(alpha * GHOST_ALPHA * 255.0F), ghostRgb));
+            if (target.ghost != null) ContainerGhost.draw(frame, camera, target.ghost, ARGB.color(Math.round(alpha * GHOST_ALPHA * 255.0F), ghostRgb));
             drawOutline(lines, dots, camera, target.box, ARGB.color(Math.round(alpha * breath * 255.0F), rgb));
-        }
-    }
-
-    private static void drawGhost(VfxFrame frame, Vec3 camera, List<ContainerGhost.Face> faces, int color) {
-        for (ContainerGhost.Face face : faces) {
-            // Only the faces turned to the camera: the far ones would show through the near ones.
-            if (face.normal().dot(camera.subtract(face.center())) <= 0.0) continue;
-            VfxMaterial material = GHOSTS.computeIfAbsent(face.texture(), texture -> VfxMaterial.alpha(texture).withSoftness(0.0F).withSmoothing(false).withShader(GHOST_SHADER));
-            frame.draw(material).quad(face.a(), face.b(), face.c(), face.d(), face.u0(), face.v0(), face.u1(), face.v1(), color);
         }
     }
 
@@ -194,11 +179,11 @@ public final class ContainerHighlight {
     /**
      * @param pos   the container's remembered position
      * @param box   what is outlined, in world coordinates
-     * @param ghost the faces of its ghost
+     * @param ghost its ghost, or null for none
      * @param item  the item searched for, a stack of one
      * @param count how many of it the container held
      */
-    public record Target(ResourceKey<Level> dimension, BlockPos pos, AABB box, List<ContainerGhost.Face> ghost, ItemStack item, long count,
+    public record Target(ResourceKey<Level> dimension, BlockPos pos, AABB box, ContainerGhost.@Nullable Ghost ghost, ItemStack item, long count,
                          long start, long end) {
         /** How strongly it shows at {@code now}: fading in, then out at the end. */
         public float alpha(long now) {

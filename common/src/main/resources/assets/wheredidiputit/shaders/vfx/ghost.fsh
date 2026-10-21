@@ -2,9 +2,10 @@
 
 #moj_import <coolcatlib:vfx.glsl>
 
-// The ghost of a found container (ContainerHighlight, ContainerGhost): its own block faces, each in its texture,
-// drawn only where something stands in front of them. Where the container is in plain sight its faces (pushed out of
-// the block a hair) are in front of everything, so nothing is drawn there and the real block shows.
+// The ghost of a found container (ContainerHighlight, ContainerGhost): a picture of it, drawn opaque by the game's own
+// renderers, laid over it at one opacity and only where something stands in front of it. The picture's quad is at the
+// container's nearest point, so where the container is in plain sight it is behind the quad: nothing is drawn there
+// and the real block shows.
 uniform sampler2D Sampler0;
 uniform sampler2D DepthSampler;
 
