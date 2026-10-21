@@ -3,6 +3,7 @@ package net.ixdarklord.wheredidiputit.find;
 import net.ixdarklord.coolcatcore.api.event.v2.client.ClientPlayerEvents;
 import net.ixdarklord.coolcatcore.api.event.v2.client.ClientTickEvents;
 import net.ixdarklord.coolcatcore.api.network.Network;
+import net.ixdarklord.wheredidiputit.config.MatchMode;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
 import net.ixdarklord.wheredidiputit.config.WDIPIServerConfig;
 import net.ixdarklord.wheredidiputit.network.FindRequestPayload;
@@ -47,7 +48,7 @@ public final class LiveSearch {
                 if (now >= waiting.sendAt) send(waiting);
             } else if (now - waiting.sendAt > TIMEOUT_MILLIS) {
                 pending = null;
-                FindKey.findInMemory(minecraft, waiting.query, waiting.all);
+                FindKey.findInMemory(minecraft, waiting.query, waiting.all, waiting.mode);
             }
         });
     }
@@ -56,17 +57,22 @@ public final class LiveSearch {
         serverHasMod = payload.protocol() == HelloPayload.PROTOCOL;
     }
 
+    /** Whether the server said hello this connection: it has the mod. */
+    public static boolean serverHasMod() {
+        return serverHasMod;
+    }
+
     /** Whether a search should ask the server: it has the mod and allows live search. */
     public static boolean usable() {
         return serverHasMod && WDIPIServerConfig.ALLOW_LIVE_SEARCH.get();
     }
 
     /** Asks the server; the answer, or the fall back to memory, comes later. A newer request replaces a waiting one. */
-    public static void request(ItemStack query, boolean all) {
+    public static void request(ItemStack query, boolean all, MatchMode mode) {
         long now = Util.getMillis();
         long cooldownEnds = lastSentAt == 0L ? now
                 : lastSentAt + WDIPIServerConfig.REQUEST_COOLDOWN.get() * 1000L + COOLDOWN_MARGIN_MILLIS;
-        Pending request = new Pending(++nextId, query.copy(), all, Math.max(now, cooldownEnds));
+        Pending request = new Pending(++nextId, query.copy(), all, mode, Math.max(now, cooldownEnds));
         pending = request;
         if (request.sendAt <= now) send(request);
     }
@@ -75,7 +81,7 @@ public final class LiveSearch {
         request.sent = true;
         request.sendAt = Util.getMillis();
         lastSentAt = request.sendAt;
-        Network.sendToServer(new FindRequestPayload(request.id, request.query.copyWithCount(1), WDIPIClientConfig.MATCH_MODE.get(),
+        Network.sendToServer(new FindRequestPayload(request.id, request.query.copyWithCount(1), request.mode,
                 WDIPIClientConfig.INDEX_NESTED_CONTENTS.get(), WDIPIClientConfig.IGNORED_TAGS.get()));
     }
 
@@ -86,9 +92,9 @@ public final class LiveSearch {
         pending = null;
         Minecraft minecraft = Minecraft.getInstance();
         if (payload.status() == FindResultPayload.Status.OK) {
-            FindKey.findWithLive(minecraft, waiting.query, waiting.all, payload);
+            FindKey.findWithLive(minecraft, waiting.query, waiting.all, waiting.mode, payload);
         } else {
-            FindKey.findInMemory(minecraft, waiting.query, waiting.all);
+            FindKey.findInMemory(minecraft, waiting.query, waiting.all, waiting.mode);
         }
     }
 
@@ -97,13 +103,15 @@ public final class LiveSearch {
         private final int id;
         private final ItemStack query;
         private final boolean all;
+        private final MatchMode mode;
         private long sendAt;
         private boolean sent;
 
-        private Pending(int id, ItemStack query, boolean all, long sendAt) {
+        private Pending(int id, ItemStack query, boolean all, MatchMode mode, long sendAt) {
             this.id = id;
             this.query = query;
             this.all = all;
+            this.mode = mode;
             this.sendAt = sendAt;
         }
     }

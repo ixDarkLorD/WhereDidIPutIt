@@ -9,6 +9,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
@@ -53,6 +54,11 @@ public final class ContainerMemory {
         return current != null ? current.dimension(dimension) : null;
     }
 
+    /** The memory of the world or server the client is in now, or null outside one (or in one that can't be told apart). */
+    public static @Nullable WorldMemory world() {
+        return current;
+    }
+
     static void record(ResourceKey<Level> dimension, ContainerRecord record) {
         DimensionMemory memory = dimension(dimension);
         if (memory != null) memory.put(record);
@@ -81,21 +87,37 @@ public final class ContainerMemory {
         int days = WDIPIClientConfig.FORGET_AFTER_DAYS.get();
         if (days > 0) memory.forgetOlderThan(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days));
 
-        List<BlockPos> gone = new ArrayList<>();
+        List<ContainerRecord> gone = new ArrayList<>();
         List<ContainerRecord> moved = new ArrayList<>();
         for (ContainerRecord record : memory.records()) {
+            if (record.entity() != null) {
+                checkEntity(level, record, gone, moved);
+                continue;
+            }
             if (!level.isLoaded(record.pos())) continue;
             BlockPos key = ContainerKeys.keyOf(level, record.pos());
             boolean sameBlock = BuiltInRegistries.BLOCK.getKey(level.getBlockState(record.pos()).getBlock()).equals(record.block());
             if (key == null || !sameBlock) {
-                gone.add(record.pos());
+                gone.add(record);
             } else if (!key.equals(record.pos())) {
                 // A chest placed beside it made it a double chest remembered under the other half: keep what it held.
-                gone.add(record.pos());
+                gone.add(record);
                 if (memory.get(key) == null) moved.add(record.movedTo(key));
             }
         }
         gone.forEach(memory::remove);
         moved.forEach(memory::put);
+    }
+
+    // An entity's record follows it while it is loaded, and goes when a donkey or llama no longer carries a chest. One
+    // out of sight keeps its last place: the client can't tell an entity that left from one that died.
+    private static void checkEntity(ClientLevel level, ContainerRecord record, List<ContainerRecord> gone, List<ContainerRecord> moved) {
+        Entity entity = level.getEntity(record.entity());
+        if (entity == null) return;
+        if (!ContainerWatcher.isContainer(entity)) {
+            gone.add(record);
+        } else if (entity.blockPosition().distManhattan(record.pos()) >= 2) {
+            moved.add(record.movedTo(entity.blockPosition()));
+        }
     }
 }

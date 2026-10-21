@@ -3,6 +3,8 @@ package net.ixdarklord.wheredidiputit.network;
 import net.ixdarklord.coolcatcore.api.network.Network;
 import net.ixdarklord.wheredidiputit.find.LiveSearch;
 import net.ixdarklord.wheredidiputit.live.LiveSearchServer;
+import net.ixdarklord.wheredidiputit.live.TeamSharingServer;
+import net.ixdarklord.wheredidiputit.memory.TeamMemory;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
@@ -18,6 +20,10 @@ public final class WDIPINetwork {
         Network.registerClientbound(FindResultPayload.class, (payload, context) -> context.queue(() -> LiveSearch.onResult(payload)));
         Network.registerServerbound(FindRequestPayload.class, (payload, context) -> context.queue(() -> {
             if (context.getPlayer() instanceof ServerPlayer player) LiveSearchServer.onRequest(player, payload);
+        }));
+        Network.registerClientbound(SharedContainerPayload.class, (payload, context) -> context.queue(() -> TeamMemory.onShared(payload)));
+        Network.registerServerbound(ShareContainerPayload.class, (payload, context) -> context.queue(() -> {
+            if (context.getPlayer() instanceof ServerPlayer player) TeamSharingServer.onShare(player, payload);
         }));
     }
 }

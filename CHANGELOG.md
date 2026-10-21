@@ -25,3 +25,16 @@ This file is for listing all the changes to this project
 - The item marker says how long ago a remembered container was last seen ("2m ago"), as what it holds may have changed since. It can be turned off.
 - The last-seen tooltip says how many of the item are stored in all: "(412 in 2 containers)".
 - A container you break is forgotten, and stops being highlighted, the moment the server confirms it.
+- **Find similar** (key, unbound by default): every container with something like the hovered item: the same enchantment, the same potion, or the same item. Also a match mode ("Similar").
+- **Find room** (key, unbound by default): the nearest container with room for the hovered item, one already holding some first. The marker shows how many more fit.
+- **Find missing ingredients** (key, unbound by default): for an item you have the recipe for, the containers holding what your inventory lacks to craft it.
+- **Path line**: after finding one container, glowing dots on the ground lead along a walking route to it, until you open it.
+- **Compass**: after the highlight, a small compass at the top of the screen keeps pointing to the container found, with its distance, until you open it.
+- A soft chime sounds from the direction of each container found.
+- **Contents preview** (hold a key, unbound by default): the slots of the highlighted container nearest your crosshair, as last seen, with the item found framed.
+- **Sorting hints**: with a container open, an item's tooltip says when a container nearby holds more of it.
+- **Entity containers**: chest boats, minecarts with a chest or hopper, and donkeys, mules and llamas with a chest are remembered too, and followed as they move.
+- **Export and import**: `/wdipi_client export` saves what is remembered in this world to a folder; `/wdipi_client import <name>` merges one in, keeping whichever record of each container is newer.
+- **Operator command**: `/wdipi find <item> [radius]` lists the containers holding an item around you, each a click away from a teleport.
+- **Team memory** (server setting, off by default): players on the same team share what they see in containers.
+- **Live search into storage networks**: on a server with the mod, finds now look into Applied Energistics 2, Refined Storage, Simple Storage Network and Tom's Simple Storage networks through their nearby terminals and controllers. It can be turned off on the server.

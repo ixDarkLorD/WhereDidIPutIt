@@ -26,10 +26,12 @@ import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,23 +78,28 @@ public final class LiveSearchServer {
         LAST_REQUEST.put(player.getUUID(), now);
         boolean nested = request.nested() && WDIPIServerConfig.INCLUDE_SHULKER_CONTENTS.get();
         ItemMatcher matcher = ItemMatcher.of(request.query(), request.mode(), nested, request.ignoredTags());
-        reply(player, request, FindResultPayload.Status.OK, radius, search(player, matcher, radius));
+        reply(player, request, FindResultPayload.Status.OK, radius, search(player.level(), player.getEyePosition(), matcher, radius, player));
     }
 
     private static void reply(ServerPlayer player, FindRequestPayload request, FindResultPayload.Status status, int radius, List<FindResultPayload.Hit> hits) {
         Network.sendToPlayer(player, new FindResultPayload(request.requestId(), status, radius, hits));
     }
 
-    private static List<FindResultPayload.Hit> search(ServerPlayer player, ItemMatcher matcher, int radius) {
-        ServerLevel level = player.level();
-        Vec3 eyes = player.getEyePosition();
-        BlockPos center = player.blockPosition();
+    /**
+     * The containers within {@code radius} of {@code eyes} in loaded chunks holding a matching item, nearest first, at
+     * most {@link #MAX_HITS}. With a {@code player}, only those they could open themselves; without one (an operator's
+     * command), all but unlooted loot chests.
+     */
+    public static List<FindResultPayload.Hit> search(ServerLevel level, Vec3 eyes, ItemMatcher matcher, int radius, @Nullable ServerPlayer player) {
+        BlockPos center = BlockPos.containing(eyes);
         int minChunkX = SectionPos.blockToSectionCoord(center.getX() - radius);
         int maxChunkX = SectionPos.blockToSectionCoord(center.getX() + radius);
         int minChunkZ = SectionPos.blockToSectionCoord(center.getZ() - radius);
         int maxChunkZ = SectionPos.blockToSectionCoord(center.getZ() + radius);
         // Both halves of a double chest add up under one key, so stacks are gathered per key first.
         Map<BlockPos, List<StoredItem>> contents = new LinkedHashMap<>();
+        // A storage network reached through several blocks is read once, at the access point nearest the player.
+        Map<Object, NetworkSite> networks = WDIPIServerConfig.INCLUDE_STORAGE_NETWORKS.get() && NetworkReaders.any() ? new IdentityHashMap<>() : null;
         for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
                 // Loaded chunks only: a search never loads or generates the world.
@@ -100,7 +107,17 @@ public final class LiveSearchServer {
                 if (chunk == null) continue;
                 for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
                     BlockPos pos = blockEntity.getBlockPos();
-                    if (Vec3.atCenterOf(pos).distanceTo(eyes) > radius || !searchable(player, level, blockEntity)) continue;
+                    double distance = Vec3.atCenterOf(pos).distanceTo(eyes);
+                    if (distance > radius) continue;
+                    NetworkReaders.Access access = networks != null ? NetworkReaders.of(blockEntity) : null;
+                    if (access != null) {
+                        if (reachable(player, level, blockEntity)) {
+                            NetworkSite known = networks.get(access.network());
+                            if (known == null || distance < known.distance) networks.put(access.network(), new NetworkSite(access, blockEntity, distance));
+                        }
+                        continue;
+                    }
+                    if (!searchable(player, level, blockEntity)) continue;
                     BlockPos key = ContainerKeys.keyOf(level, pos);
                     if (key == null) continue;
                     List<StoredItem> items = contents.computeIfAbsent(key, k -> new ArrayList<>());
@@ -112,6 +129,7 @@ public final class LiveSearchServer {
                 }
             }
         }
+        if (networks != null) networks.values().forEach(site -> contents.put(site.accessPoint.getBlockPos(), site.access.contents(site.accessPoint)));
         List<FindResultPayload.Hit> hits = new ArrayList<>();
         contents.forEach((pos, items) -> {
             long count = matcher.count(items);
@@ -121,11 +139,22 @@ public final class LiveSearchServer {
         return hits.size() > MAX_HITS ? List.copyOf(hits.subList(0, MAX_HITS)) : hits;
     }
 
-    // Whether this block entity is a container the player could look into themselves.
-    private static boolean searchable(ServerPlayer player, ServerLevel level, BlockEntity blockEntity) {
+    // A storage network's access point, as near the player as any of its blocks found.
+    private record NetworkSite(NetworkReaders.Access access, BlockEntity accessPoint, double distance) {
+    }
+
+    // Whether the player could use this access point themselves: the same protection as for containers.
+    private static boolean reachable(@Nullable ServerPlayer player, ServerLevel level, BlockEntity blockEntity) {
+        if (player == null) return true;
+        return !blockEntity.getBlockState().is(EXCLUDED) && player.mayInteract(level, blockEntity.getBlockPos());
+    }
+
+    // Whether this block entity is a container the player could look into themselves (any container for no player).
+    private static boolean searchable(@Nullable ServerPlayer player, ServerLevel level, BlockEntity blockEntity) {
         if (!(blockEntity instanceof Container)) return false;
         // Reading an unlooted chest would roll its loot, and tell the player what it holds before they open it.
         if (blockEntity instanceof RandomizableContainer randomizable && randomizable.getLootTable() != null) return false;
+        if (player == null) return true;
         if (blockEntity instanceof BaseContainerBlockEntity base && !base.canOpen(player)) return false;
         if (blockEntity.getBlockState().is(EXCLUDED)) return false;
         // Spawn protection and the world border; protection mods that hook it are respected too.

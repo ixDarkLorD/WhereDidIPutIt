@@ -3,15 +3,21 @@ package net.ixdarklord.wheredidiputit.find;
 import net.ixdarklord.wheredidiputit.config.MatchMode;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
 import net.ixdarklord.wheredidiputit.memory.StoredItem;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.component.BundleContents;
 import net.minecraft.world.item.component.ItemContainerContents;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -53,8 +59,33 @@ public final class ItemMatcher {
                 // An item in no tag left has nothing to share: fall back to the item itself.
                 yield stack -> stack.getItem() == copy.getItem() || tags.stream().anyMatch(stack.typeHolder()::is);
             }
+            case SIMILAR -> similar(copy);
         };
         return new ItemMatcher(test, nested);
+    }
+
+    // Alike in what they do: an enchantment in common, the same potion, else the same item.
+    private static Predicate<ItemStack> similar(ItemStack query) {
+        Set<Holder<Enchantment>> enchantments = enchantments(query);
+        if (!enchantments.isEmpty()) return stack -> enchantments(stack).stream().anyMatch(enchantments::contains);
+        PotionContents potion = query.get(DataComponents.POTION_CONTENTS);
+        if (potion != null && potion.potion().isPresent()) {
+            return stack -> {
+                PotionContents other = stack.get(DataComponents.POTION_CONTENTS);
+                return other != null && other.potion().equals(potion.potion());
+            };
+        }
+        return stack -> stack.getItem() == query.getItem();
+    }
+
+    // An item's enchantments, on it or stored in it (an enchanted book).
+    private static Set<Holder<Enchantment>> enchantments(ItemStack stack) {
+        Set<Holder<Enchantment>> all = new HashSet<>();
+        ItemEnchantments on = stack.get(DataComponents.ENCHANTMENTS);
+        if (on != null) all.addAll(on.keySet());
+        ItemEnchantments stored = stack.get(DataComponents.STORED_ENCHANTMENTS);
+        if (stored != null) all.addAll(stored.keySet());
+        return all;
     }
 
     /** The matching item there is most of, as a stack of one (what the item marker shows); empty if none matches. */
