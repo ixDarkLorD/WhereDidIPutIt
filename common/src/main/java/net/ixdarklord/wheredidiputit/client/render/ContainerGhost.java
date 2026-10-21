@@ -1,116 +1,183 @@
 package net.ixdarklord.wheredidiputit.client.render;
 
-import net.ixdarklord.coolcatcanvas.api.client.viewport.SceneViewport;
-import net.ixdarklord.coolcatcanvas.api.client.vfx.VfxFrame;
-import net.ixdarklord.coolcatcanvas.api.client.vfx.VfxMaterial;
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.pipeline.TextureTarget;
+import com.mojang.blaze3d.platform.Lighting;
+import com.mojang.blaze3d.shaders.UniformType;
+import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.SubmitNodeStorage;
+import net.minecraft.client.renderer.block.BlockModelRenderState;
+import net.minecraft.client.renderer.block.BlockModelResolver;
+import net.minecraft.client.renderer.block.model.BlockDisplayContext;
+import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
+import org.joml.Matrix4fStack;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 
 /**
- * A found container's ghost: its blocks drawn by the game's own renderers into a picture of their own (a CoolCatLib
- * {@link SceneViewport}), seen from where the player stands, and that picture laid over the container in the world at
- * one opacity. Drawing the picture opaque first is what keeps it looking like the block: the picture's depth buffer
- * hides a model's inner and far faces as on the real block, which faces drawn see-through one by one each showed (the
- * author, 2026-10-21). It also draws chests and other block entities' models as the game does.
+ * Found containers' ghosts: their blocks drawn by the game's own renderers, with the player's own camera, into a
+ * screen-sized target of their own with its own depth buffer, then laid over the world at one opacity wherever the world
+ * is in front of them. Drawn opaque first, a model shows only its outside, as the real block does: faces drawn
+ * see-through one by one showed its inside and far faces (the author, 2026-10-21). Drawn with the world's own
+ * projection, a ghost is in perspective from every side, which a picture of the block from one direction was not (a
+ * CoolCatLib scene viewport, tried and dropped the same day). Chests and other block entities' models come out as the
+ * game draws them.
  * <p>
- * The picture is orthographic, looking from the camera at the container's middle, and is laid on a quad turned to the
- * camera at the container's nearest point, sized so it covers what the container covers on the screen. So where the
- * container is in plain sight it is behind the quad, and {@code vfx/ghost} draws nothing there.
+ * Each block is drawn a hair larger than itself ({@link #GROW}), so where the container is in plain sight its ghost is
+ * just in front of it and the composite ({@code core/ghost}) leaves the real block showing.
  */
 public final class ContainerGhost {
-    /** The pictures' size in pixels. */
-    private static final int SIZE = 512;
-    /** How many containers get a ghost at once; the farther ones of a larger find have only their outline. */
-    private static final int MAX = 16;
-    /** The picture is a little wider than the container from any side, so nothing of it is cut off. */
-    private static final double MARGIN = 1.04;
-    /** Closer than this to its quad, the ghost isn't drawn: the player is all but inside the container. */
-    private static final double MIN_NEAR = 0.05;
-    private static final Identifier SHADER = WhereDidIPutIt.id("vfx/ghost");
+    /** How much larger than the block its ghost is drawn, about its middle: a hundredth of a block on each side. */
+    private static final float GROW = 1.02F;
+    private static final int FULL_BRIGHT = 0xF000F0;
+    private static final BlockDisplayContext CONTEXT = BlockDisplayContext.create();
+    private static final RenderPipeline COMPOSITE = RenderPipeline.builder()
+            .withLocation(WhereDidIPutIt.id("pipeline/ghost"))
+            .withVertexShader("core/screenquad")
+            .withFragmentShader(WhereDidIPutIt.id("core/ghost"))
+            .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
+            .withSampler("GhostSampler")
+            .withSampler("GhostDepthSampler")
+            .withSampler("DepthSampler")
+            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+            .withVertexFormat(DefaultVertexFormat.EMPTY, VertexFormat.Mode.TRIANGLES)
+            .build();
 
-    // Made as they are first needed and kept for later finds, one picture each.
-    private static final List<SceneViewport> VIEWPORTS = new ArrayList<>();
-    private static final Map<Identifier, VfxMaterial> MATERIALS = new HashMap<>();
+    private static @Nullable TextureTarget target;
+    private static @Nullable BlockModelResolver resolver;
+    // One model for each kind of block shown, made when it is first needed.
+    private static final Map<BlockState, BlockModelRenderState> MODELS = new HashMap<>();
 
     private ContainerGhost() {
     }
 
-    /**
-     * A container's ghost: the picture it is drawn in, the box it covers in the world, and how much of the scene the
-     * picture spans.
-     */
-    public record Ghost(int viewport, AABB box, double span) {
+    /** A container's ghost: its blocks as they were when it was found. */
+    public record Ghost(List<Placed> blocks) {
     }
 
-    /**
-     * Sets up the {@code index}th picture with the blocks at {@code positions} as they are now; null when there are
-     * already {@link #MAX} or none of the blocks is loaded.
-     */
-    public static @Nullable Ghost build(Level level, int index, List<BlockPos> positions, AABB shape) {
-        if (index >= MAX || positions.isEmpty()) return null;
-        while (VIEWPORTS.size() <= index) {
-            VIEWPORTS.add(SceneViewport.create(WhereDidIPutIt.id("ghost_" + VIEWPORTS.size()), SIZE, SIZE));
-        }
-        SceneViewport viewport = VIEWPORTS.get(index).clear();
-        // The scene round the first block, so its numbers stay small (the scene is drawn in floats) far from 0, 0.
-        BlockPos origin = positions.getFirst();
-        boolean any = false;
+    public record Placed(BlockPos pos, BlockState state) {
+    }
+
+    /** Forgets the block models made so far, so a find after the game's models were reloaded draws the new ones. */
+    public static void clearModels() {
+        resolver = null;
+        MODELS.clear();
+    }
+
+    /** The ghost of the blocks at {@code positions}, as they are now; null when none of them is loaded. */
+    public static @Nullable Ghost build(Level level, List<BlockPos> positions) {
+        List<Placed> blocks = new ArrayList<>();
         for (BlockPos pos : positions) {
-            if (!level.isLoaded(pos)) continue;
-            viewport.block(pos.subtract(origin), level.getBlockState(pos));
-            any = true;
+            if (level.isLoaded(pos)) blocks.add(new Placed(pos.immutable(), level.getBlockState(pos)));
         }
-        if (!any) return null;
-        // Any side of a box fits in its diagonal.
-        double span = Math.sqrt(shape.getXsize() * shape.getXsize() + shape.getYsize() * shape.getYsize() + shape.getZsize() * shape.getZsize()) * MARGIN;
-        Vec3 centre = shape.getCenter();
-        viewport.frame(span, centre.x - origin.getX(), centre.y - origin.getY(), centre.z - origin.getZ());
-        return new Ghost(index, shape, span);
+        return blocks.isEmpty() ? null : new Ghost(List.copyOf(blocks));
     }
 
-    /** Turns the ghost's picture to the camera and lays it over the container, in {@code color} (its tint and opacity). */
-    public static void draw(VfxFrame frame, Vec3 camera, Ghost ghost, int color) {
-        SceneViewport viewport = VIEWPORTS.get(ghost.viewport());
-        viewport.use();
-        Vec3 centre = ghost.box().getCenter();
-        Vec3 toCamera = camera.subtract(centre);
-        double distance = toCamera.length();
-        if (distance < 1.0E-3) return;
-        Vec3 u = toCamera.scale(1.0 / distance);
-        // The viewport's camera stands at (-cos p sin y, sin p, cos p cos y) from the scene's middle (its view()).
-        double pitch = Math.asin(Math.clamp(u.y, -1.0, 1.0));
-        double yaw = Math.atan2(-u.x, u.z);
-        // Drawn at the start of the next frame: the picture is a frame behind the camera, too little to see.
-        viewport.camera((float) Math.toDegrees(yaw), (float) Math.toDegrees(pitch));
-        if (!viewport.isReady()) return;
+    /**
+     * Draws the ghosts over the world in {@code color} (their tint and opacity). Called from the world effects pass,
+     * right after the level, while its projection and depth are still there.
+     */
+    public static void draw(List<Ghost> ghosts, int color) {
+        if (ghosts.isEmpty() || (color >>> 24) == 0) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        RenderTarget main = minecraft.getMainRenderTarget();
+        if (main.getDepthTextureView() == null || main.getColorTextureView() == null) return;
+        TextureTarget ghostTarget = target(main);
+        drawBlocks(minecraft, ghostTarget, ghosts);
+        composite(main, ghostTarget, color);
+    }
 
-        // How far the box reaches towards the camera from its middle, and how far that nearest point is.
-        AABB box = ghost.box();
-        double reach = Math.abs(u.x) * box.getXsize() / 2.0 + Math.abs(u.y) * box.getYsize() / 2.0 + Math.abs(u.z) * box.getZsize() / 2.0;
-        double near = distance - reach;
-        if (near < MIN_NEAR) return;
-        // The quad sits at the nearest point but covers on the screen what the picture's span covers at the middle.
-        double half = ghost.span() / 2.0 * near / distance;
-        Vec3 at = centre.add(u.scale(reach));
-        // The picture's right and up, as the viewport turns the scene.
-        Vec3 right = new Vec3(Math.cos(yaw), 0.0, Math.sin(yaw)).scale(half);
-        Vec3 up = new Vec3(Math.sin(pitch) * Math.sin(yaw), Math.cos(pitch), -Math.sin(pitch) * Math.cos(yaw)).scale(half);
-        VfxMaterial material = MATERIALS.computeIfAbsent(viewport.texture(), texture -> VfxMaterial.alpha(texture).withSoftness(0.0F).withShader(SHADER));
-        // The picture is upside down (drawn-to textures are): v runs up it.
-        Vec3 bottomLeft = at.subtract(right).subtract(up);
-        Vec3 topLeft = at.subtract(right).add(up);
-        Vec3 topRight = at.add(right).add(up);
-        Vec3 bottomRight = at.add(right).subtract(up);
-        frame.draw(material).quad(bottomLeft, topLeft, topRight, bottomRight, 0.0F, 0.0F, 1.0F, 1.0F, color);
+    // The ghosts' blocks, opaque, with the camera the level was drawn with.
+    private static void drawBlocks(Minecraft minecraft, TextureTarget ghostTarget, List<Ghost> ghosts) {
+        RenderSystem.getDevice().createCommandEncoder().clearColorAndDepthTextures(ghostTarget.getColorTexture(), 0, ghostTarget.getDepthTexture(), 1.0);
+        CameraRenderState camera = minecraft.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState;
+        // The level has popped its view from the model-view stack by now: it goes back on for these blocks.
+        Matrix4fStack modelView = RenderSystem.getModelViewStack();
+        modelView.pushMatrix();
+        modelView.mul(camera.viewRotationMatrix);
+        RenderSystem.outputColorTextureOverride = ghostTarget.getColorTextureView();
+        RenderSystem.outputDepthTextureOverride = ghostTarget.getDepthTextureView();
+        try {
+            if (resolver == null) resolver = new BlockModelResolver(minecraft.getModelManager());
+            BlockModelResolver models = resolver;
+            minecraft.gameRenderer.getLighting().setupFor(Lighting.Entry.LEVEL);
+            FeatureRenderDispatcher features = minecraft.gameRenderer.getFeatureRenderDispatcher();
+            SubmitNodeStorage storage = features.getSubmitNodeStorage();
+            PoseStack pose = new PoseStack();
+            for (Ghost ghost : ghosts) {
+                for (Placed block : ghost.blocks()) {
+                    BlockModelRenderState model = MODELS.computeIfAbsent(block.state(), state -> {
+                        BlockModelRenderState made = new BlockModelRenderState();
+                        models.update(made, state, CONTEXT);
+                        return made;
+                    });
+                    if (model.isEmpty()) continue;
+                    pose.pushPose();
+                    // From the camera, in floats: the block's place less the camera's stays small anywhere in the world.
+                    pose.translate(block.pos().getX() - camera.pos.x + 0.5, block.pos().getY() - camera.pos.y + 0.5, block.pos().getZ() - camera.pos.z + 0.5);
+                    pose.scale(GROW, GROW, GROW);
+                    pose.translate(-0.5F, -0.5F, -0.5F);
+                    model.submit(pose, storage, FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
+                    pose.popPose();
+                }
+            }
+            features.renderAllFeatures();
+            minecraft.renderBuffers().bufferSource().endBatch();
+        } finally {
+            RenderSystem.outputColorTextureOverride = null;
+            RenderSystem.outputDepthTextureOverride = null;
+            modelView.popMatrix();
+        }
+    }
+
+    // The ghosts' picture over the world, where the world is in front of them.
+    private static void composite(RenderTarget main, TextureTarget ghostTarget, int color) {
+        Vector4f modulator = new Vector4f((color >> 16 & 0xFF) / 255.0F, (color >> 8 & 0xFF) / 255.0F, (color & 0xFF) / 255.0F, (color >>> 24) / 255.0F);
+        var transforms = RenderSystem.getDynamicUniforms().writeTransform(new Matrix4f(), modulator, new Vector3f(), new Matrix4f());
+        GpuSampler nearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
+        try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder()
+                .createRenderPass(() -> "Where Did I Put It? ghosts", main.getColorTextureView(), OptionalInt.empty())) {
+            pass.setPipeline(COMPOSITE);
+            RenderSystem.bindDefaultUniforms(pass);
+            pass.setUniform("DynamicTransforms", transforms);
+            pass.bindTexture("GhostSampler", ghostTarget.getColorTextureView(), nearest);
+            pass.bindTexture("GhostDepthSampler", ghostTarget.getDepthTextureView(), nearest);
+            pass.bindTexture("DepthSampler", main.getDepthTextureView(), nearest);
+            pass.draw(0, 3);
+        }
+    }
+
+    // The ghosts' own target, as large as the screen's.
+    private static TextureTarget target(RenderTarget main) {
+        if (target == null) {
+            target = new TextureTarget("Where Did I Put It? ghosts", main.width, main.height, true);
+        } else if (target.width != main.width || target.height != main.height) {
+            target.resize(main.width, main.height);
+        }
+        return target;
     }
 }

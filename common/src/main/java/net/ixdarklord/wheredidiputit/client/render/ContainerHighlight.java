@@ -38,7 +38,7 @@ import java.util.List;
  * a round cap, so the glow rounds each corner instead of being cut there (the corner discs' own glow showed as
  * circles, 2026-10-21).
  * <p>
- * The ghost ({@code vfx/ghost}): a picture of the container drawn by the game's own renderers, laid over it at one
+ * The ghost: the container drawn by the game's own renderers with the player's camera, laid over the world at one
  * opacity where it is hidden ({@link ContainerGhost}).
  */
 public final class ContainerHighlight {
@@ -71,10 +71,11 @@ public final class ContainerHighlight {
         long now = Util.getMillis();
         long end = now + WDIPIClientConfig.HIGHLIGHT_DURATION.get() * 1000L;
         List<Target> shown = new ArrayList<>();
+        ContainerGhost.clearModels();
         for (Found container : found) {
             List<BlockPos> blocks = blocks(level, container.pos());
             AABB shape = shape(level, blocks);
-            ContainerGhost.Ghost ghost = WDIPIClientConfig.GHOST.get() ? ContainerGhost.build(level, shown.size(), blocks, shape) : null;
+            ContainerGhost.Ghost ghost = WDIPIClientConfig.GHOST.get() ? ContainerGhost.build(level, blocks) : null;
             shown.add(new Target(level.dimension(), container.pos(), shape.inflate(INFLATE), ghost, container.item().copyWithCount(1),
                     container.count(), now, end));
         }
@@ -99,9 +100,15 @@ public final class ContainerHighlight {
         Vec3 camera = frame.cameraPosition();
         VfxDraw lines = frame.draw(LINE);
         VfxDraw dots = frame.draw(DOT);
+        // The ghosts now, all in one go (they fade together: one find shows them all); the outlines go out with the
+        // world effects after them, so they are drawn over the ghosts.
+        List<ContainerGhost.Ghost> ghosts = new ArrayList<>();
+        for (Target target : current) {
+            if (target.ghost != null) ghosts.add(target.ghost);
+        }
+        ContainerGhost.draw(ghosts, ARGB.color(Math.round(current.getFirst().alpha(now) * GHOST_ALPHA * 255.0F), ghostRgb));
         for (Target target : current) {
             float alpha = target.alpha(now);
-            if (target.ghost != null) ContainerGhost.draw(frame, camera, target.ghost, ARGB.color(Math.round(alpha * GHOST_ALPHA * 255.0F), ghostRgb));
             drawOutline(lines, dots, camera, target.box, ARGB.color(Math.round(alpha * breath * 255.0F), rgb));
         }
     }
