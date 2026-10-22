@@ -11,6 +11,7 @@
 
 <p align="center">
   <a href="https://modrinth.com/mod/where-did-i-put-it"><img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/wheredidiputit/modrinth.svg" alt="Modrinth" height="26"></a>
+  <a href="https://www.curseforge.com/minecraft/mc-mods/where-did-i-put-it"><img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/wheredidiputit/curseforge.svg" alt="CurseForge" height="26"></a>
   <a href="https://discord.gg/ZapGEPqm2V"><img src="https://img.shields.io/discord/1173075408556654592?style=flat&logo=discord&logoColor=white&label=&labelColor=ffaa00&color=3A3F58" alt="Discord" width="110" height="26"></a>
 </p>
 <p align="center">
@@ -45,9 +46,9 @@ searches look in the real containers around you, even ones you never opened.
 
 ## 📦 Download
 
-| Modrinth |
-|---|
-| [where-did-i-put-it](https://modrinth.com/mod/where-did-i-put-it) |
+| CurseForge | Modrinth |
+|---|---|
+| [where-did-i-put-it](https://www.curseforge.com/minecraft/mc-mods/where-did-i-put-it) | [where-did-i-put-it](https://modrinth.com/mod/where-did-i-put-it) |
 
 It needs [CoolCatLib](https://modrinth.com/mod/coolcatlib), and [Fabric API](https://modrinth.com/mod/fabric-api) on
 Fabric. JEI, REI and the storage mods are optional.
