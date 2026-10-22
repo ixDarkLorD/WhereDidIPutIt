@@ -1,6 +1,7 @@
-#version 330
+#ifndef WHEREDIDIPUTIT_OUTLINE_GLSL
+#define WHEREDIDIPUTIT_OUTLINE_GLSL
 
-#moj_import <coolcatlib:vfx.glsl>
+#include <coolcatlib:vfx.glsl>
 
 // The look of the found container's outline (ContainerHighlight), shared by its edges (vfx/outline_line) and its
 // corners (vfx/outline_dot). Distances are in units of the glow's half width: 0 on the line, 1 where the glow ends.
@@ -30,3 +31,5 @@ vec4 outline_color(vec4 vertexColor, float core, float glow, float visibility) {
     // The line a little paler than its glow, so it reads as a bright edge.
     return vec4(mix(vertexColor.rgb, vec3(1.0), core * 0.3), alpha);
 }
+
+#endif

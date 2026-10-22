@@ -28,7 +28,7 @@ public final class ItemMarker {
 
     private static void render(GuiGraphicsExtractor graphics, DeltaTracker delta) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || minecraft.options.hideGui || !WDIPIClientConfig.ITEM_MARKER.get()) return;
+        if (minecraft.level == null || minecraft.gui.hud.isHidden() || !WDIPIClientConfig.ITEM_MARKER.get()) return;
         for (ContainerHighlight.Target target : ContainerHighlight.current(minecraft.level)) {
             ScreenProjection on = ScreenProjection.of(minecraft, graphics, target.box().getCenter());
             if (!on.inView()) continue;

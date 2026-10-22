@@ -17,7 +17,7 @@ import net.minecraft.sounds.SoundEvents;
  * Unbound by default, so it clashes with nothing; the container browser can do the same.
  */
 public final class IgnoreKey {
-    public static final KeyMapping KEY = new KeyMapping("key.wheredidiputit.toggle_ignore", InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), FindKey.CATEGORY);
+    public static final KeyMapping KEY = new KeyMapping("key.wheredidiputit.toggle_ignore", InputConstants.Type.KEYBOARD, InputConstants.UNKNOWN.getValue(), FindKey.CATEGORY);
 
     private IgnoreKey() {
     }

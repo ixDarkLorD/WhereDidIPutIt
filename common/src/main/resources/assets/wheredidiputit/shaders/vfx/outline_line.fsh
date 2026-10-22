@@ -1,6 +1,7 @@
 #version 330
+#extension GL_ARB_separate_shader_objects : require
 
-#moj_import <wheredidiputit:outline.glsl>
+#include <wheredidiputit:outline.glsl>
 
 // One edge of the outline (ContainerHighlight): v runs across it (0.5 on the line), u along it in glow half widths,
 // measured from the nearest corner: 0 at the corner, negative inside the edge (down to -1, then -1 along the middle),
@@ -10,10 +11,10 @@
 uniform sampler2D Sampler0;
 uniform sampler2D DepthSampler;
 
-in vec2 texCoord;
-in vec4 vertexColor;
+layout(location = 0) in vec2 texCoord;
+layout(location = 1) in vec4 vertexColor;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 void main() {
     float across = abs(texCoord.y - 0.5) * 2.0;

@@ -1,7 +1,7 @@
 # Changelog
 This file is for listing all the changes to this project
 
-## v26.1.2-1 Release | Unreleased
+## v26.3-1 Release | Unreleased
 ### ✨ New Features
 - The mod has a logo in the mods list.
 - Project set up for Fabric and NeoForge (Minecraft 26.1 to 26.1.2), built on CoolCatLib.
@@ -40,3 +40,7 @@ This file is for listing all the changes to this project
 - **Operator command**: `/wdipi find <item> [radius]` lists the containers holding an item around you, each a click away from a teleport.
 - **Team memory** (server setting, off by default): players on the same team share what they see in containers.
 - **Live search into storage networks**: on a server with the mod, finds now look into Applied Energistics 2, Refined Storage, Simple Storage Network and Tom's Simple Storage networks through their nearby terminals and controllers. It can be turned off on the server.
+
+### 🛠️ Changes
+- Ported to Minecraft 26.3 (Fabric, and NeoForge 26.3.0.38-beta and up), on CoolCatLib 26.3-5. Ghosts are now drawn by CoolCatLib's ghost blocks, which look the same.
+- Refined Storage and Simple Storage Network support is left out of the 26.3 version until those mods have 26.3 builds. Applied Energistics 2, Tom's Simple Storage and JEI are still supported; REI support stays in for when REI has a 26.3 build.

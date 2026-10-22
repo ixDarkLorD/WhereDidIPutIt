@@ -1,5 +1,6 @@
 package net.ixdarklord.wheredidiputit.client.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.ixdarklord.wheredidiputit.client.hud.ItemMarker;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
 import net.ixdarklord.wheredidiputit.find.FindKey;
@@ -15,7 +16,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -144,8 +144,8 @@ public final class SearchScreen extends Screen {
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         int index = this.slotAt(event.x(), event.y());
-        if (index >= 0 && (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT || event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT)) {
-            FindKey.find(this.shown.get(index).stack(), event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+        if (index >= 0 && (event.button() == InputConstants.MOUSE_BUTTON_LEFT || event.button() == InputConstants.MOUSE_BUTTON_RIGHT)) {
+            FindKey.find(this.shown.get(index).stack(), event.button() == InputConstants.MOUSE_BUTTON_RIGHT);
             return true;
         }
         return super.mouseClicked(event, doubleClick);

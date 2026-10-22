@@ -1,16 +1,17 @@
 #version 330
+#extension GL_ARB_separate_shader_objects : require
 
-#moj_import <wheredidiputit:outline.glsl>
+#include <wheredidiputit:outline.glsl>
 
 // A corner of the outline (ContainerHighlight): a disc facing the camera with the solid line's round joint only. Its
 // own glow showed as a circle at every corner (author, 2026-10-21); the edges' glows meet there instead.
 uniform sampler2D Sampler0;
 uniform sampler2D DepthSampler;
 
-in vec2 texCoord;
-in vec4 vertexColor;
+layout(location = 0) in vec2 texCoord;
+layout(location = 1) in vec4 vertexColor;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 void main() {
     float dist = length(texCoord * 2.0 - 1.0);

@@ -1,14 +1,5 @@
 apply from: "https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/gradle/v4/fabric.gradle"
 
-// Refined Storage is published to its own Maven, which the shared scripts don't list.
-repositories {
-    maven {
-        name = "Refined Mods"
-        url = "https://maven.creeperhost.net/"
-        content { includeGroup "com.refinedmods.refinedstorage" }
-    }
-}
-
 dependencies {
     // CoolCatLib (Fabric). Its common classes are inside this jar.
     implementation "net.ixdarklord.coolcatlib:coolcatlib-fabric:${coolcatlib_version}"
@@ -21,11 +12,10 @@ dependencies {
     if (project.findProperty("test_glazed") == "true") localRuntime("net.ixdarklord.glazedmenu:glazedmenu-fabric:${glazedmenu_version}") { transitive = false }
 
     // Recipe viewers in a dev run only when asked (-Ptest_jei=true, -Ptest_rei=true), to try the find key on their entries.
-    if (project.findProperty("test_jei") == "true") localRuntime "mezz.jei:jei-26.1.2-fabric:${jei_version}"
+    if (project.findProperty("test_jei") == "true") localRuntime "mezz.jei:jei-26.3-fabric:${jei_version}"
     if (project.findProperty("test_rei") == "true") localRuntime "me.shedaniel:RoughlyEnoughItems-fabric:${rei_version}"
 
     // Optional storage mods whose terminal readers live here (compat/), the jars Fabric has. -Ptest_<mod>=true runs them.
     compileOnly("maven.modrinth:toms-storage:${toms_storage_fabric_version}") { transitive = false }
     if (project.findProperty("test_toms") == "true") localRuntime("maven.modrinth:toms-storage:${toms_storage_fabric_version}") { transitive = false }
-    if (project.findProperty("test_rs") == "true") localRuntime "com.refinedmods.refinedstorage:refinedstorage-fabric:${refined_storage_version}"
 }

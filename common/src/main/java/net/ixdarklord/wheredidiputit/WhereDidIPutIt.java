@@ -2,7 +2,6 @@ package net.ixdarklord.wheredidiputit;
 
 import net.ixdarklord.coolcatcore.api.core.ModConstructor;
 import net.ixdarklord.coolcatcore.api.platform.Platform;
-import net.ixdarklord.wheredidiputit.compat.refinedstorage.RefinedStorageNetworkReader;
 import net.ixdarklord.wheredidiputit.config.WDIPIConfigs;
 import net.ixdarklord.wheredidiputit.live.LiveSearchServer;
 import net.ixdarklord.wheredidiputit.live.NetworkReaders;
@@ -33,7 +32,7 @@ public final class WhereDidIPutIt implements ModConstructor {
         LiveSearchServer.init();
         WDIPICommands.init();
         TeamSharingServer.init();
-        if (Platform.isModLoaded(RefinedStorageNetworkReader.MOD_ID)) NetworkReaders.register(new RefinedStorageNetworkReader());
+        // Refined Storage 2 has no 26.3 build; its RefinedStorageNetworkReader is left out of the build (common/build.gradle).
     }
 
     public static Identifier id(String path) {

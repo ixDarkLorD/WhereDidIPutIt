@@ -24,7 +24,6 @@ import net.minecraft.util.Util;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -40,14 +39,14 @@ import java.util.UUID;
  */
 public final class FindKey {
     public static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(WhereDidIPutIt.id("main"));
-    public static final KeyMapping FIND = new KeyMapping("key.wheredidiputit.find", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F, CATEGORY);
-    public static final KeyMapping FIND_ALL = new KeyMapping("key.wheredidiputit.find_all", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, CATEGORY);
+    public static final KeyMapping FIND = new KeyMapping("key.wheredidiputit.find", InputConstants.Type.KEYBOARD, InputConstants.KEY_F, CATEGORY);
+    public static final KeyMapping FIND_ALL = new KeyMapping("key.wheredidiputit.find_all", InputConstants.Type.KEYBOARD, InputConstants.KEY_G, CATEGORY);
     /** Every container holding something like the hovered item ({@link MatchMode#SIMILAR}); unbound by default. */
-    public static final KeyMapping FIND_SIMILAR = new KeyMapping("key.wheredidiputit.find_similar", InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), CATEGORY);
+    public static final KeyMapping FIND_SIMILAR = new KeyMapping("key.wheredidiputit.find_similar", InputConstants.Type.KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY);
     /** The nearest container with room for the hovered item ({@link SpaceFinder}); unbound by default. */
-    public static final KeyMapping FIND_SPACE = new KeyMapping("key.wheredidiputit.find_space", InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), CATEGORY);
+    public static final KeyMapping FIND_SPACE = new KeyMapping("key.wheredidiputit.find_space", InputConstants.Type.KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY);
     /** Where the missing ingredients to craft the hovered item are ({@link RecipeNeeds}); unbound by default. */
-    public static final KeyMapping FIND_INGREDIENTS = new KeyMapping("key.wheredidiputit.find_ingredients", InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), CATEGORY);
+    public static final KeyMapping FIND_INGREDIENTS = new KeyMapping("key.wheredidiputit.find_ingredients", InputConstants.Type.KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY);
 
     /** Presses closer together than this are the key repeating while held, not new presses. */
     private static final long REPEAT_MILLIS = 250L;
@@ -211,7 +210,7 @@ public final class FindKey {
 
     /** Says something on the action bar and over the open screen: with a low note when it is a failure, a soft one when not. */
     static void tell(Minecraft minecraft, Component message, boolean good) {
-        minecraft.gui.setOverlayMessage(message, false);
+        minecraft.gui.hud.setOverlayMessage(message, false);
         ScreenNotice.show(message);
         minecraft.getSoundManager().play(good ? SimpleSoundInstance.forUI(SoundEvents.NOTE_BLOCK_CHIME.value(), 1.2F, 0.6F)
                 : SimpleSoundInstance.forUI(SoundEvents.NOTE_BLOCK_BASS.value(), 0.7F, 0.6F));
@@ -226,7 +225,7 @@ public final class FindKey {
         if (minecraft.player != null) {
             minecraft.player.closeContainer();
         } else {
-            minecraft.setScreen(null);
+            minecraft.gui.setScreen(null);
         }
     }
 }

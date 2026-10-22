@@ -44,7 +44,7 @@ public final class TargetArrow {
 
     private static void render(GuiGraphicsExtractor graphics, DeltaTracker delta) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || minecraft.options.hideGui || !WDIPIClientConfig.OFF_SCREEN_ARROW.get()) return;
+        if (minecraft.level == null || minecraft.gui.hud.isHidden() || !WDIPIClientConfig.OFF_SCREEN_ARROW.get()) return;
         List<Arrow> arrows = new ArrayList<>();
         long now = Util.getMillis();
         for (ContainerHighlight.Target target : ContainerHighlight.current(minecraft.level)) {
