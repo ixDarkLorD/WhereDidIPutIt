@@ -7,6 +7,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * The look the mod's screens share: a dark panel with a soft shadow, a header underlined in the highlight color, inset
@@ -73,6 +74,24 @@ public final class ScreenStyle {
     }
 
     /** A slot under the mouse: a light wash over what it holds. */
+    /**
+     * A slot's item with its decorations and its count in the bottom right corner, as the game draws them, except that a
+     * count wider than the item ("128", "1.2k") is drawn smaller so it stays inside the slot.
+     */
+    public static void slotItem(GuiGraphicsExtractor graphics, Font font, ItemStack stack, int x, int y, String count) {
+        graphics.item(stack, x, y);
+        // The durability bar and cooldown, with no count: an empty text draws nothing.
+        graphics.itemDecorations(font, stack, x, y, "");
+        int width = font.width(count);
+        float scale = width > 16 ? Math.max(0.5F, 16.0F / width) : 1.0F;
+        graphics.pose().pushMatrix();
+        // Anchored where the game puts it: right edge at x + 17, baseline row ending at y + 17.
+        graphics.pose().translate(x + 17, y + 17);
+        graphics.pose().scale(scale, scale);
+        graphics.text(font, count, -width, -8, 0xFFFFFFFF, true);
+        graphics.pose().popMatrix();
+    }
+
     public static void slotHover(GuiGraphicsExtractor graphics, int x, int y) {
         graphics.fill(x + 1, y + 1, x + 17, y + 17, 0x50FFFFFF);
     }
