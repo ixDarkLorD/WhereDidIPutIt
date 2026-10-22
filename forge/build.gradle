@@ -7,6 +7,23 @@ dependencies {
     // Recipe viewers in a dev run only when asked (-Ptest_jei=true, -Ptest_rei=true), to try the find key on their entries.
     if (project.findProperty("test_jei") == "true") modLocalRuntime libs.jei.forge
     if (project.findProperty("test_rei") == "true") modLocalRuntime libs.rei.forge
+
+    // Optional storage mods whose terminal readers live here (compat/): on 1.20.1 all four have Forge jars, and Refined
+    // Storage and Simple Storage Network have no other. -Ptest_<mod>=true runs them.
+    modCompileOnly("appeng:appliedenergistics2-forge:${ae2_version}") { transitive = false }
+    modCompileOnly("maven.modrinth:refined-storage:${refined_storage_version}") { transitive = false }
+    modCompileOnly("maven.modrinth:simple-storage-network:${storage_network_version}") { transitive = false }
+    modCompileOnly("maven.modrinth:toms-storage:${toms_storage_version}") { transitive = false }
+    if (project.findProperty("test_ae2") == "true") {
+        modLocalRuntime("appeng:appliedenergistics2-forge:${ae2_version}") { transitive = false }
+        modLocalRuntime("maven.modrinth:guideme:${guideme_version}") { transitive = false }
+    }
+    if (project.findProperty("test_rs") == "true") modLocalRuntime("maven.modrinth:refined-storage:${refined_storage_version}") { transitive = false }
+    if (project.findProperty("test_ssn") == "true") {
+        modLocalRuntime("maven.modrinth:simple-storage-network:${storage_network_version}") { transitive = false }
+        modLocalRuntime("maven.modrinth:flib:${flib_version}") { transitive = false }
+    }
+    if (project.findProperty("test_toms") == "true") modLocalRuntime("maven.modrinth:toms-storage:${toms_storage_version}") { transitive = false }
 }
 
 // A dev run straight into a singleplayer world of run/saves when asked (-Ptest_world="<world folder>"), to test without
