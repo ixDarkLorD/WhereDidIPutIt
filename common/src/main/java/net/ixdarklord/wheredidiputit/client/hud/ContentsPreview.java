@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.ixdarklord.coolcatcore.api.client.registry.KeyMappingRegistry;
 import net.ixdarklord.coolcatcore.api.event.v2.client.ClientGuiEvents;
 import net.ixdarklord.wheredidiputit.client.render.ContainerHighlight;
+import net.ixdarklord.wheredidiputit.client.screen.ScreenStyle;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
 import net.ixdarklord.wheredidiputit.find.FindKey;
 import net.ixdarklord.wheredidiputit.find.HeldKeyMapping;
@@ -87,8 +88,7 @@ public final class ContentsPreview {
             StoredItem item = items.get(i);
             int slotX = x + PADDING + (i % COLUMNS) * SLOT;
             int slotY = y + PADDING + (i / COLUMNS) * SLOT;
-            graphics.item(item.stack(), slotX + 1, slotY + 1);
-            graphics.itemDecorations(minecraft.font, item.stack(), slotX + 1, slotY + 1, ItemMarker.count(item.count()));
+            ScreenStyle.slotItem(graphics, minecraft.font, item.stack(), slotX + 1, slotY + 1, ItemMarker.count(item.count()));
             if (ItemStack.isSameItem(item.stack(), found)) graphics.outline(slotX, slotY, SLOT, SLOT, frame);
         }
         if (items.isEmpty()) graphics.text(minecraft.font, Component.translatable("gui.wheredidiputit.browser.empty_container"), x + PADDING, y + PADDING + 4, TEXT_COLOR);
