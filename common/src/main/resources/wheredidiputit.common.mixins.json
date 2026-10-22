@@ -4,10 +4,13 @@
   "compatibilityLevel": "JAVA_17",
   "package": "net.ixdarklord.wheredidiputit.mixin",
   "mixins": [
+    "LevelInvoker",
+    "RandomizableContainerBlockEntityAccessor"
   ],
   "client": [
     "client.AbstractContainerScreenMixin",
     "client.ClientLevelMixin",
+    "client.GameRendererInvoker",
     "client.KeyboardHandlerMixin",
     "client.MultiPlayerGameModeMixin"
   ],

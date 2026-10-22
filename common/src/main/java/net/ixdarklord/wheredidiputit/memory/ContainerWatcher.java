@@ -10,11 +10,11 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.animal.equine.AbstractChestedHorse;
+import net.minecraft.world.entity.animal.horse.AbstractChestedHorse;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.vehicle.ContainerEntity;
 import net.minecraft.world.inventory.ChestMenu;
@@ -101,7 +101,8 @@ public final class ContainerWatcher {
         if (minecraft.level == null || minecraft.player == null) return;
         boolean recent = Util.getMillis() - usedAt <= USE_WINDOW_MILLIS && minecraft.level.dimension() == usedDimension;
         // Riding a chest boat or a donkey with a chest, the inventory key opens its inventory: it is the one ridden.
-        if (!recent && minecraft.player.getVehicle() instanceof Entity vehicle && isContainer(vehicle)) {
+        Entity vehicle = minecraft.player.getVehicle();
+        if (!recent && vehicle != null && isContainer(vehicle)) {
             entity = vehicle.getUUID();
             pos = null;
             recent = true;
@@ -110,7 +111,7 @@ public final class ContainerWatcher {
         DimensionMemory memory = ContainerMemory.dimension(minecraft.level.dimension());
         ContainerRecord known;
         if (entity != null) {
-            Entity opened = minecraft.level.getEntity(entity);
+            Entity opened = EntityLookup.get(minecraft.level, entity);
             if (opened == null) return;
             watchedEntity = entity;
             watchedPos = opened.blockPosition();
@@ -141,10 +142,10 @@ public final class ContainerWatcher {
         if (screen == null || pos == null || minecraft.player == null || minecraft.level == null) return;
         if (minecraft.level.dimension() != dimension || !WDIPIClientConfig.ENABLED.get()) return;
 
-        Identifier type;
+        ResourceLocation type;
         if (entity != null) {
             // Gone (killed, broken) while it was open: nothing to remember.
-            Entity opened = minecraft.level.getEntity(entity);
+            Entity opened = EntityLookup.get(minecraft.level, entity);
             if (opened == null || !isContainer(opened)) return;
             pos = opened.blockPosition();
             type = BuiltInRegistries.ENTITY_TYPE.getKey(opened.getType());

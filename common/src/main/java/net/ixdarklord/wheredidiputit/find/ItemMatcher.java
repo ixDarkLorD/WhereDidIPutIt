@@ -3,16 +3,14 @@ package net.ixdarklord.wheredidiputit.find;
 import net.ixdarklord.wheredidiputit.config.MatchMode;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
 import net.ixdarklord.wheredidiputit.memory.StoredItem;
-import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.alchemy.PotionContents;
-import net.minecraft.world.item.component.BundleContents;
-import net.minecraft.world.item.component.ItemContainerContents;
+import net.minecraft.world.item.alchemy.Potion;
+import net.minecraft.world.item.alchemy.PotionUtils;
+import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -51,13 +49,13 @@ public final class ItemMatcher {
     public static ItemMatcher of(ItemStack query, MatchMode mode, boolean nested, List<String> ignoredTags) {
         ItemStack copy = query.copy();
         Predicate<ItemStack> test = switch (mode) {
-            case EXACT -> stack -> ItemStack.isSameItemSameComponents(stack, copy);
+            case EXACT -> stack -> ItemStack.isSameItemSameTags(stack, copy);
             case IGNORE_DATA -> stack -> stack.getItem() == copy.getItem();
             case ITEM_TAG -> {
                 List<Pattern> ignored = ignoredTags.stream().map(ItemMatcher::pattern).toList();
-                List<TagKey<Item>> tags = copy.typeHolder().tags().filter(tag -> !ignored(tag, ignored)).toList();
+                List<TagKey<Item>> tags = copy.getTags().filter(tag -> !ignored(tag, ignored)).toList();
                 // An item in no tag left has nothing to share: fall back to the item itself.
-                yield stack -> stack.getItem() == copy.getItem() || tags.stream().anyMatch(stack.typeHolder()::is);
+                yield stack -> stack.getItem() == copy.getItem() || tags.stream().anyMatch(stack::is);
             }
             case SIMILAR -> similar(copy);
         };
@@ -66,26 +64,16 @@ public final class ItemMatcher {
 
     // Alike in what they do: an enchantment in common, the same potion, else the same item.
     private static Predicate<ItemStack> similar(ItemStack query) {
-        Set<Holder<Enchantment>> enchantments = enchantments(query);
+        Set<Enchantment> enchantments = enchantments(query);
         if (!enchantments.isEmpty()) return stack -> enchantments(stack).stream().anyMatch(enchantments::contains);
-        PotionContents potion = query.get(DataComponents.POTION_CONTENTS);
-        if (potion != null && potion.potion().isPresent()) {
-            return stack -> {
-                PotionContents other = stack.get(DataComponents.POTION_CONTENTS);
-                return other != null && other.potion().equals(potion.potion());
-            };
-        }
+        Potion potion = PotionUtils.getPotion(query);
+        if (potion != Potions.EMPTY) return stack -> PotionUtils.getPotion(stack) == potion;
         return stack -> stack.getItem() == query.getItem();
     }
 
-    // An item's enchantments, on it or stored in it (an enchanted book).
-    private static Set<Holder<Enchantment>> enchantments(ItemStack stack) {
-        Set<Holder<Enchantment>> all = new HashSet<>();
-        ItemEnchantments on = stack.get(DataComponents.ENCHANTMENTS);
-        if (on != null) all.addAll(on.keySet());
-        ItemEnchantments stored = stack.get(DataComponents.STORED_ENCHANTMENTS);
-        if (stored != null) all.addAll(stored.keySet());
-        return all;
+    // An item's enchantments, on it or stored in it (an enchanted book: the game's helper reads either).
+    private static Set<Enchantment> enchantments(ItemStack stack) {
+        return new HashSet<>(EnchantmentHelper.getEnchantments(stack).keySet());
     }
 
     /** The matching item there is most of, as a stack of one (what the item marker shows); empty if none matches. */
@@ -110,10 +98,7 @@ public final class ItemMatcher {
 
     private ItemStack firstInside(ItemStack stack, int depth) {
         if (depth >= MAX_DEPTH) return ItemStack.EMPTY;
-        ItemContainerContents container = stack.get(DataComponents.CONTAINER);
-        BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
-        List<ItemStack> inside = container != null ? container.nonEmptyItemCopyStream().toList() : bundle != null ? bundle.itemCopyStream().toList() : List.of();
-        for (ItemStack inner : inside) {
+        for (ItemStack inner : NestedItems.of(stack)) {
             if (this.test.test(inner)) return inner.copyWithCount(1);
             ItemStack deeper = this.firstInside(inner, depth + 1);
             if (!deeper.isEmpty()) return deeper;
@@ -145,13 +130,8 @@ public final class ItemMatcher {
     private long count(ItemStack stack, int depth) {
         long count = this.test.test(stack) ? 1 : 0;
         if (!this.nested || depth >= MAX_DEPTH) return count;
-        ItemContainerContents container = stack.get(DataComponents.CONTAINER);
-        if (container != null) {
-            count += container.nonEmptyItemCopyStream().mapToLong(inner -> this.count(inner, depth + 1) * inner.getCount()).sum();
-        }
-        BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
-        if (bundle != null) {
-            count += bundle.itemCopyStream().mapToLong(inner -> this.count(inner, depth + 1) * inner.getCount()).sum();
+        for (ItemStack inner : NestedItems.of(stack)) {
+            count += this.count(inner, depth + 1) * inner.getCount();
         }
         return count;
     }

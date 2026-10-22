@@ -9,7 +9,6 @@ import net.ixdarklord.wheredidiputit.client.hud.TargetArrow;
 import net.ixdarklord.wheredidiputit.client.render.ContainerHighlight;
 import net.ixdarklord.wheredidiputit.client.render.Guidance;
 import net.ixdarklord.wheredidiputit.client.screen.ScreenKeys;
-import net.ixdarklord.wheredidiputit.compat.refinedstorage.RefinedStorageTerminal;
 import net.ixdarklord.wheredidiputit.compat.rei.ReiCompat;
 import net.ixdarklord.wheredidiputit.find.FindKey;
 import net.ixdarklord.wheredidiputit.find.IgnoreKey;
@@ -23,7 +22,7 @@ import net.ixdarklord.wheredidiputit.memory.StorageTerminals;
 
 /**
  * Client mod constructor (CoolCatLib): container memory, the find key, highlights and the HUD.
- * Fabric lists it under {@code coolcatlib:client}; NeoForge's {@code WhereDidIPutItNeoForge} passes it to {@code client(...)}.
+ * Fabric lists it under {@code coolcatlib:client}; Forge's {@code WhereDidIPutItForge} passes it to {@code client(...)}.
  */
 public final class WhereDidIPutItClient implements ClientModConstructor {
     @Override
@@ -46,7 +45,5 @@ public final class WhereDidIPutItClient implements ClientModConstructor {
         Compass.init();
         // JEI's plugin registers itself when JEI loads it; REI is asked directly.
         if (Platform.isModLoaded(ReiCompat.MOD_ID)) ReiCompat.init();
-        // Storage terminals whose mods have a loader-free jar; the others are registered by the loader modules.
-        if (Platform.isModLoaded(RefinedStorageTerminal.MOD_ID)) StorageTerminals.register(new RefinedStorageTerminal());
     }
 }

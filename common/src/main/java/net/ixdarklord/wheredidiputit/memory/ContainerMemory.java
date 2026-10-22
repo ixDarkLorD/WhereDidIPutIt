@@ -38,7 +38,7 @@ public final class ContainerMemory {
 
     public static void init() {
         ClientPlayerEvents.JOIN.register(player -> {
-            current = WorldMemory.forCurrentWorld(Minecraft.getInstance(), player.connection.registryAccess());
+            current = WorldMemory.forCurrentWorld(Minecraft.getInstance());
             if (current == null) WhereDidIPutIt.LOGGER.warn("Can't tell this world or server apart from others; containers won't be remembered here");
         });
         ClientPlayerEvents.LEAVE.register(player -> {
@@ -112,7 +112,7 @@ public final class ContainerMemory {
     // An entity's record follows it while it is loaded, and goes when a donkey or llama no longer carries a chest. One
     // out of sight keeps its last place: the client can't tell an entity that left from one that died.
     private static void checkEntity(ClientLevel level, ContainerRecord record, List<ContainerRecord> gone, List<ContainerRecord> moved) {
-        Entity entity = level.getEntity(record.entity());
+        Entity entity = EntityLookup.get(level, record.entity());
         if (entity == null) return;
         if (!ContainerWatcher.isContainer(entity)) {
             gone.add(record);

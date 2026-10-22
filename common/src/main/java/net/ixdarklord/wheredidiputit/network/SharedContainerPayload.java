@@ -1,7 +1,7 @@
 package net.ixdarklord.wheredidiputit.network;
 
 import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.ixdarklord.coolcatcore.api.network.CustomPacketPayload;
 
 /** Server to client: a teammate saw this container (team memory). Sent only while the server allows it. */
 public record SharedContainerPayload(String from, SharedContainer container) implements CustomPacketPayload {

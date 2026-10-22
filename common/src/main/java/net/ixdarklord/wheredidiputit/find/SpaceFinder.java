@@ -40,7 +40,7 @@ public final class SpaceFinder {
             long room = 0;
             boolean holds = false;
             for (StoredItem stored : record.items()) {
-                if (!ItemStack.isSameItemSameComponents(stored.stack(), item)) continue;
+                if (!ItemStack.isSameItemSameTags(stored.stack(), item)) continue;
                 holds = true;
                 room += Math.max(0, stackSize - stored.count());
             }

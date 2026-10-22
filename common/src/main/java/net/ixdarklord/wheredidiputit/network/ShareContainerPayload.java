@@ -1,7 +1,7 @@
 package net.ixdarklord.wheredidiputit.network;
 
 import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.ixdarklord.coolcatcore.api.network.CustomPacketPayload;
 
 /**
  * Client to server: I just closed this container, for my team to know (team memory, only when the server allows it).

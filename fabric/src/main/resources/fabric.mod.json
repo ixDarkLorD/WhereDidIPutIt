@@ -20,12 +20,10 @@
   "environment": "${mod_environment}",
   "entrypoints": {
     "coolcatlib:common": [
-      "net.ixdarklord.wheredidiputit.WhereDidIPutIt",
-      "net.ixdarklord.wheredidiputit.fabric.WhereDidIPutItFabricCommon"
+      "net.ixdarklord.wheredidiputit.WhereDidIPutIt"
     ],
     "coolcatlib:client": [
-      "net.ixdarklord.wheredidiputit.WhereDidIPutItClient",
-      "net.ixdarklord.wheredidiputit.fabric.WhereDidIPutItFabricClient"
+      "net.ixdarklord.wheredidiputit.WhereDidIPutItClient"
     ],
     "jei_mod_plugin": [
       "net.ixdarklord.wheredidiputit.compat.jei.WDIPIJeiPlugin"
@@ -43,9 +41,9 @@
 
   "depends": {
     "java": ">=${versions.java.get()}",
-    "minecraft": ">=${project.supported_min_mc_version} <=${max_mc_version}",
+    "minecraft": ">=${mc_version} <=${max_mc_version}",
     "fabricloader": ">=${min_fabric_version}",
-    "fabric-api": ">=${project.supported_min_fabric_api_version}",
+    "fabric-api": ">=${min_fabric_api_version}",
     "coolcatlib": ">=${coolcatlib_version}"
   }
 }

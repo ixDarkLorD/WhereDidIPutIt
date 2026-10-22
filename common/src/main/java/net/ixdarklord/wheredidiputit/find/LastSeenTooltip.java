@@ -12,7 +12,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -41,7 +41,7 @@ public final class LastSeenTooltip {
     public static void init() {
         KeyMappingRegistry.register(KEY);
         // At the very end of the tooltip, after every other mod's lines; the sorting hint follows (registered after).
-        ItemTooltipEvents.APPEND.register((stack, context, player, flag, lines) -> append(stack, lines));
+        ItemTooltipEvents.APPEND.register((stack, player, flag, lines) -> append(stack, lines));
     }
 
     private static void append(ItemStack stack, List<Component> lines) {
@@ -101,7 +101,7 @@ public final class LastSeenTooltip {
         boolean nested = WDIPIClientConfig.INDEX_NESTED_CONTENTS.get();
         Answer cached = last;
         if (cached != null && cached.memory == memory && cached.version == memory.version() && cached.mode == mode && cached.nested == nested
-                && ItemStack.isSameItemSameComponents(cached.stack, stack)) {
+                && ItemStack.isSameItemSameTags(cached.stack, stack)) {
             return cached;
         }
         // Every container in the dimension, however far: the tooltip says where, the find key goes there.

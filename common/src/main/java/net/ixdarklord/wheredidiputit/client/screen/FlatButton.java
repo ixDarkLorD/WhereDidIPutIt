@@ -2,12 +2,11 @@ package net.ixdarklord.wheredidiputit.client.screen;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.ARGB;
+import net.ixdarklord.wheredidiputit.util.ARGB;
 
 /**
  * A button in the screens' flat look ({@link ScreenStyle}): plain, filled with the accent ({@link Kind#PRIMARY}), or
@@ -34,12 +33,12 @@ public final class FlatButton extends AbstractButton {
     }
 
     @Override
-    public void onPress(InputWithModifiers input) {
+    public void onPress() {
         this.action.run();
     }
 
     @Override
-    protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
+    protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         boolean hovered = this.isHoveredOrFocused() && this.active;
         int fill;
         int text = ScreenStyle.TEXT;
@@ -57,7 +56,7 @@ public final class FlatButton extends AbstractButton {
         ScreenStyle.rounded(graphics, this.getX(), this.getY(), this.getWidth(), this.getHeight(), ARGB.multiplyAlpha(fill, this.alpha));
         Font font = Minecraft.getInstance().font;
         int width = font.width(this.getMessage());
-        graphics.text(font, this.getMessage(), this.getX() + (this.getWidth() - width) / 2, this.getY() + (this.getHeight() - 8) / 2, text, false);
+        graphics.drawString(font, this.getMessage(), this.getX() + (this.getWidth() - width) / 2, this.getY() + (this.getHeight() - 8) / 2, text, false);
     }
 
     @Override

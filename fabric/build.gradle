@@ -1,31 +1,16 @@
 apply from: "https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/gradle/v4/fabric.gradle"
 
-// Refined Storage is published to its own Maven, which the shared scripts don't list.
-repositories {
-    maven {
-        name = "Refined Mods"
-        url = "https://maven.creeperhost.net/"
-        content { includeGroup "com.refinedmods.refinedstorage" }
-    }
-}
-
 dependencies {
     // CoolCatLib (Fabric). Its common classes are inside this jar.
-    implementation "net.ixdarklord.coolcatlib:coolcatlib-fabric:${coolcatlib_version}"
-
-    // Dev runs only, never published: MCP Bridge lets the game be driven from outside. Not transitive, because it still points
-    // at CoolCatLib's old coordinates and would load a second copy of it.
-    localRuntime("net.ixdarklord.mcp_bridge:mcp_bridge-fabric:${mcp_bridge_version}") { transitive = false }
-
-    // Glazed Menu, to open the config screens in a dev run, only when asked (-Ptest_glazed=true).
-    if (project.findProperty("test_glazed") == "true") localRuntime("net.ixdarklord.glazedmenu:glazedmenu-fabric:${glazedmenu_version}") { transitive = false }
+    modImplementation "net.ixdarklord.coolcatlib:coolcatlib-fabric:${libs.versions.minecraft.get()}-${coolcatlib_version}"
 
     // Recipe viewers in a dev run only when asked (-Ptest_jei=true, -Ptest_rei=true), to try the find key on their entries.
-    if (project.findProperty("test_jei") == "true") localRuntime "mezz.jei:jei-26.1.2-fabric:${jei_version}"
-    if (project.findProperty("test_rei") == "true") localRuntime "me.shedaniel:RoughlyEnoughItems-fabric:${rei_version}"
+    if (project.findProperty("test_jei") == "true") modLocalRuntime libs.jei.fabric
+    if (project.findProperty("test_rei") == "true") modLocalRuntime libs.rei.fabric
+}
 
-    // Optional storage mods whose terminal readers live here (compat/), the jars Fabric has. -Ptest_<mod>=true runs them.
-    compileOnly("maven.modrinth:toms-storage:${toms_storage_fabric_version}") { transitive = false }
-    if (project.findProperty("test_toms") == "true") localRuntime("maven.modrinth:toms-storage:${toms_storage_fabric_version}") { transitive = false }
-    if (project.findProperty("test_rs") == "true") localRuntime "com.refinedmods.refinedstorage:refinedstorage-fabric:${refined_storage_version}"
+// A dev run straight into a singleplayer world of run/saves when asked (-Ptest_world="<world folder>"), to test without
+// clicking through the menus.
+if (project.findProperty("test_world") != null) {
+    loom.runs.client.programArgs("--quickPlaySingleplayer", project.findProperty("test_world").toString())
 }

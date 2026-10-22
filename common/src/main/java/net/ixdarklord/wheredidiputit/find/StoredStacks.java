@@ -3,12 +3,9 @@ package net.ixdarklord.wheredidiputit.find;
 import net.ixdarklord.wheredidiputit.memory.ContainerRecord;
 import net.ixdarklord.wheredidiputit.memory.DimensionMemory;
 import net.ixdarklord.wheredidiputit.memory.StoredItem;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.BundleContents;
-import net.minecraft.world.item.component.ItemContainerContents;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -59,7 +56,7 @@ public final class StoredStacks {
     private static void add(Map<Item, List<Tally>> byItem, Set<Tally> here, ItemStack stack, long count, boolean nested, int depth) {
         if (stack.isEmpty() || count <= 0) return;
         List<Tally> tallies = byItem.computeIfAbsent(stack.getItem(), item -> new ArrayList<>());
-        Tally tally = tallies.stream().filter(t -> ItemStack.isSameItemSameComponents(t.stack, stack)).findFirst().orElse(null);
+        Tally tally = tallies.stream().filter(t -> ItemStack.isSameItemSameTags(t.stack, stack)).findFirst().orElse(null);
         if (tally == null) {
             tally = new Tally(stack.copyWithCount(1));
             tallies.add(tally);
@@ -67,10 +64,7 @@ public final class StoredStacks {
         tally.count += count;
         here.add(tally);
         if (!nested || depth >= MAX_DEPTH) return;
-        ItemContainerContents container = stack.get(DataComponents.CONTAINER);
-        if (container != null) container.nonEmptyItemCopyStream().forEach(inner -> add(byItem, here, inner, inner.getCount() * count, true, depth + 1));
-        BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
-        if (bundle != null) bundle.itemCopyStream().forEach(inner -> add(byItem, here, inner, inner.getCount() * count, true, depth + 1));
+        for (ItemStack inner : NestedItems.of(stack)) add(byItem, here, inner, inner.getCount() * count, true, depth + 1);
     }
 
     /**
@@ -82,7 +76,7 @@ public final class StoredStacks {
         if (text.isEmpty()) return true;
         if (text.startsWith("#")) {
             String tag = text.substring(1);
-            return stack.typeHolder().tags().anyMatch(key -> key.location().toString().contains(tag));
+            return stack.getTags().anyMatch(key -> key.location().toString().contains(tag));
         }
         if (text.startsWith("@")) return BuiltInRegistries.ITEM.getKey(stack.getItem()).getNamespace().contains(text.substring(1));
         return stack.getHoverName().getString().toLowerCase(Locale.ROOT).contains(text)

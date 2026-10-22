@@ -2,7 +2,7 @@ package net.ixdarklord.wheredidiputit.network;
 
 import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 import net.ixdarklord.wheredidiputit.config.MatchMode;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.ixdarklord.coolcatcore.api.network.CustomPacketPayload;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.List;

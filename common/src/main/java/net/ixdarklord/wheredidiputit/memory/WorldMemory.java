@@ -6,13 +6,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.client.server.IntegratedServer;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
-import net.minecraft.nbt.Tag;
-import net.minecraft.resources.Identifier;
-import net.minecraft.resources.RegistryOps;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
@@ -45,27 +41,25 @@ public final class WorldMemory {
     });
 
     private final Path folder;
-    private final RegistryOps<Tag> ops;
     private final Map<ResourceKey<Level>, DimensionMemory> dimensions = new HashMap<>();
 
-    private WorldMemory(Path folder, HolderLookup.Provider registries) {
+    private WorldMemory(Path folder) {
         this.folder = folder;
-        this.ops = ContainerRecord.ops(registries);
     }
 
     /** The memory for the world or server the client is in now; empty when it can't be told apart from others (e.g. no server address). */
-    public static @Nullable WorldMemory forCurrentWorld(Minecraft minecraft, HolderLookup.Provider registries) {
+    public static @Nullable WorldMemory forCurrentWorld(Minecraft minecraft) {
         Path root = Platform.getGameFolder().resolve(WhereDidIPutIt.MOD_ID);
         IntegratedServer singleplayer = minecraft.getSingleplayerServer();
         if (singleplayer != null) {
             Path save = singleplayer.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize().getFileName();
-            return new WorldMemory(root.resolve("sp").resolve(sanitize(save.toString())), registries);
+            return new WorldMemory(root.resolve("sp").resolve(sanitize(save.toString())));
         }
         ServerData server = minecraft.getCurrentServer();
         if (server != null) {
-            if (server.isRealm()) return new WorldMemory(root.resolve("realms").resolve(sanitize(server.name)), registries);
+            if (minecraft.isConnectedToRealms()) return new WorldMemory(root.resolve("realms").resolve(sanitize(server.name)));
             ServerAddress address = ServerAddress.parseString(server.ip);
-            return new WorldMemory(root.resolve("mp").resolve(sanitize(address.getHost() + "_" + address.getPort())), registries);
+            return new WorldMemory(root.resolve("mp").resolve(sanitize(address.getHost() + "_" + address.getPort())));
         }
         return null;
     }
@@ -83,7 +77,7 @@ public final class WorldMemory {
     public void saveDirty() {
         this.dimensions.forEach((key, memory) -> {
             if (!memory.isDirty()) return;
-            CompoundTag tag = memory.save(this.ops);
+            CompoundTag tag = memory.save();
             Path file = this.file(key);
             WRITER.execute(() -> write(tag, file));
         });
@@ -129,7 +123,7 @@ public final class WorldMemory {
         }
         int taken = 0;
         for (Path file : files) {
-            DimensionMemory incoming = DimensionMemory.load(NbtIo.readCompressed(file, NbtAccounter.unlimitedHeap()), this.ops);
+            DimensionMemory incoming = DimensionMemory.load(NbtIo.readCompressed(file.toFile()));
             Path target = this.folder.resolve(source.relativize(file).toString());
             DimensionMemory loaded = this.dimensions.entrySet().stream().filter(entry -> this.file(entry.getKey()).equals(target))
                     .map(Map.Entry::getValue).findFirst().orElse(null);
@@ -139,7 +133,7 @@ public final class WorldMemory {
             }
             DimensionMemory stored = this.read(target);
             taken += stored.mergeNewer(incoming);
-            CompoundTag tag = stored.save(this.ops);
+            CompoundTag tag = stored.save();
             WRITER.execute(() -> write(tag, target));
         }
         return taken;
@@ -163,7 +157,7 @@ public final class WorldMemory {
     private DimensionMemory read(Path file) {
         if (!Files.isRegularFile(file)) return new DimensionMemory();
         try {
-            return DimensionMemory.load(NbtIo.readCompressed(file, NbtAccounter.unlimitedHeap()), this.ops);
+            return DimensionMemory.load(NbtIo.readCompressed(file.toFile()));
         } catch (IOException | RuntimeException e) {
             WhereDidIPutIt.LOGGER.error("Couldn't read the remembered containers in {}; starting over", file, e);
             return new DimensionMemory();
@@ -171,7 +165,7 @@ public final class WorldMemory {
     }
 
     private Path file(ResourceKey<Level> dimension) {
-        Identifier id = dimension.identifier();
+        ResourceLocation id = dimension.location();
         return this.folder.resolve(sanitize(id.getNamespace())).resolve(sanitize(id.getPath()) + ".dat");
     }
 
@@ -180,7 +174,7 @@ public final class WorldMemory {
         try {
             Files.createDirectories(file.getParent());
             Path temporary = file.resolveSibling(file.getFileName() + ".tmp");
-            NbtIo.writeCompressed(tag, temporary);
+            NbtIo.writeCompressed(tag, temporary.toFile());
             Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
             WhereDidIPutIt.LOGGER.error("Couldn't save the remembered containers to {}", file, e);
