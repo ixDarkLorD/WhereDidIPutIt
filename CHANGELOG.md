@@ -1,7 +1,7 @@
 # Changelog
 This file is for listing all the changes to this project
 
-## v1.20.1-1 Release | Unreleased
+## v1.20.1-1 Release | 2026-10-22
 ### 🛠️ Changes
 - Ported to Minecraft 1.20.1 for Forge and Fabric, with the same features as the 26.1.2 version: container memory, the find keys, live search, outlines and ghosts through walls, item markers, arrows, the compass and path line, the search screen and container browser, tooltips, team memory and commands.
 - JEI and REI are supported as on 26.1.2, and so are the storage mods' 1.20.1 versions: Applied Energistics 2 and Tom's Simple Storage on Forge and Fabric, Refined Storage (1.12) and Simple Storage Network on Forge.
