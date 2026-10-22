@@ -9,6 +9,7 @@ This file is for listing all the changes to this project
 
 ## v26.1.2-1 Release | Unreleased
 ### ✨ New Features
+- Counts in the search screen, container browser and contents preview shrink to fit their slot when they have three digits or more (128, 1.2k).
 - The mod has a logo in the mods list.
 - Project set up for Fabric and NeoForge (Minecraft 26.1 to 26.1.2), built on CoolCatLib.
 - Client and server configs.

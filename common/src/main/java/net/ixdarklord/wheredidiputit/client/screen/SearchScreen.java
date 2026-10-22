@@ -106,8 +106,7 @@ public final class SearchScreen extends Screen {
                 int index = (this.scroll + row) * COLUMNS + column;
                 if (index >= this.shown.size()) continue;
                 StoredStacks.Entry entry = this.shown.get(index);
-                graphics.renderItem(entry.stack(), x + 1, y + 1);
-                graphics.renderItemDecorations(this.font, entry.stack(), x + 1, y + 1, ItemMarker.count(entry.count()));
+                ScreenStyle.slotItem(graphics, this.font, entry.stack(), x + 1, y + 1, ItemMarker.count(entry.count()));
                 if (index == hovered) ScreenStyle.slotHover(graphics, x, y);
             }
         }
