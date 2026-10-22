@@ -38,7 +38,7 @@ public final class WDIPICommands {
 
     public static void init() {
         CommandEvents.REGISTER.register((dispatcher, context, selection) -> dispatcher.register(Commands.literal("wdipi")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .then(Commands.literal("find")
                         .then(Commands.argument("item", ItemArgument.item(context))
                                 .executes(command -> find(command, DEFAULT_RADIUS))
@@ -48,7 +48,7 @@ public final class WDIPICommands {
 
     private static int find(CommandContext<CommandSourceStack> command, int radius) throws CommandSyntaxException {
         CommandSourceStack source = command.getSource();
-        ItemStack query = ItemArgument.getItem(command, "item").createItemStack(1);
+        ItemStack query = ItemArgument.getItem(command, "item").createItemStack(1, false);
         boolean nested = WDIPIServerConfig.INCLUDE_SHULKER_CONTENTS.get();
         ItemMatcher matcher = ItemMatcher.of(query, MatchMode.IGNORE_DATA, nested, List.of());
         Vec3 from = source.getPosition();
@@ -65,8 +65,8 @@ public final class WDIPICommands {
             int distance = (int) Math.round(Vec3.atCenterOf(hit.pos()).distanceTo(from));
             Component where = ComponentUtils.wrapInSquareBrackets(Component.translatable("chat.coordinates", hit.pos().getX(), hit.pos().getY(), hit.pos().getZ()))
                     .withStyle(style -> style.withColor(ChatFormatting.GREEN)
-                            .withClickEvent(new ClickEvent.SuggestCommand("/tp @s " + hit.pos().getX() + " " + (hit.pos().getY() + 1) + " " + hit.pos().getZ()))
-                            .withHoverEvent(new HoverEvent.ShowText(Component.translatable("chat.coordinates.tooltip"))));
+                            .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/tp @s " + hit.pos().getX() + " " + (hit.pos().getY() + 1) + " " + hit.pos().getZ()))
+                            .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("chat.coordinates.tooltip"))));
             source.sendSuccess(() -> Component.translatableWithFallback("commands.wheredidiputit.find.line", " %s %s: %s (%s blocks)",
                     where, hit.block().toString(), hit.count(), distance), false);
         }

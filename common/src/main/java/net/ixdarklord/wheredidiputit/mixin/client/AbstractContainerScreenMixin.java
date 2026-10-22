@@ -5,12 +5,11 @@ import net.ixdarklord.wheredidiputit.find.HoveredStacks;
 import net.ixdarklord.wheredidiputit.find.IgnoreKey;
 import net.ixdarklord.wheredidiputit.find.ScreenNotice;
 import net.ixdarklord.wheredidiputit.memory.StorageTerminals;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -45,11 +44,11 @@ public abstract class AbstractContainerScreenMixin extends Screen {
     }
 
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
-    private void wheredidiputit$onKeyPressed(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
+    private void wheredidiputit$onKeyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
         // A text field that takes typing gets the letter, as it would without the mod (some screens type into one
         // through this method, such as storage terminals with a focused search box).
         if (this.wheredidiputit$typing()) return;
-        if (IgnoreKey.onKeyPressed(event, (AbstractContainerScreen<?>) (Object) this)) {
+        if (IgnoreKey.onKeyPressed(keyCode, scanCode, (AbstractContainerScreen<?>) (Object) this)) {
             cir.setReturnValue(true);
             return;
         }
@@ -57,7 +56,7 @@ public abstract class AbstractContainerScreenMixin extends Screen {
         ItemStack hovered = this.hoveredSlot != null && this.hoveredSlot.hasItem() ? this.hoveredSlot.getItem() : ItemStack.EMPTY;
         if (hovered.isEmpty()) hovered = StorageTerminals.hovered((AbstractContainerScreen<?>) (Object) this);
         if (hovered.isEmpty()) hovered = HoveredStacks.fromViewers(this);
-        if (FindKey.onKeyPressed(event, hovered)) cir.setReturnValue(true);
+        if (FindKey.onKeyPressed(keyCode, scanCode, hovered)) cir.setReturnValue(true);
     }
 
     @Unique
@@ -68,9 +67,9 @@ public abstract class AbstractContainerScreenMixin extends Screen {
         return false;
     }
 
-    // extractContents, not extractRenderState: the recipe book screens draw their contents without the latter.
-    @Inject(method = "extractContents", at = @At("TAIL"))
-    private void wheredidiputit$extractNotice(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a, CallbackInfo ci) {
-        ScreenNotice.extract(graphics, this.leftPos + this.imageWidth / 2, this.topPos);
+    // At the end of the base class's render, over the panel and its tooltip.
+    @Inject(method = "render", at = @At("TAIL"))
+    private void wheredidiputit$renderNotice(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        ScreenNotice.render(graphics, this.leftPos + this.imageWidth / 2, this.topPos);
     }
 }

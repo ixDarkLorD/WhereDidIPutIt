@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * Tom's Simple Storage terminals (Storage Terminal, Crafting Terminal): what the terminal's menu was last sent. Tom's
  * ships a jar per loader built from the same source, so this class is the same in the Fabric and NeoForge modules;
- * keep the two alike. Its grid isn't made of real slots: {@code getHoveredSlot()} stands in a slot for the entry under
+ * keep the two alike. Its grid isn't made of real slots: {@code getSlotUnderMouse()} stands in a slot for the entry under
  * the mouse.
  */
 public final class TomsStorageTerminal implements StorageTerminals.Terminal {
@@ -38,7 +38,7 @@ public final class TomsStorageTerminal implements StorageTerminals.Terminal {
 
     @Override
     public ItemStack hovered(AbstractContainerScreen<?> screen) {
-        Slot slot = ((AbstractStorageTerminalScreen<?>) screen).getHoveredSlot();
+        Slot slot = ((AbstractStorageTerminalScreen<?>) screen).getSlotUnderMouse();
         return slot != null ? slot.getItem() : ItemStack.EMPTY;
     }
 }

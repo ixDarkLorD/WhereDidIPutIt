@@ -14,8 +14,8 @@ public final class FindMessages {
     /** What a container is called: its screen's title, else its block's (or entity type's) name. */
     public static Component name(ContainerRecord record) {
         if (record.label() != null) return record.label();
-        if (record.entity() != null) return BuiltInRegistries.ENTITY_TYPE.getValue(record.block()).getDescription();
-        return BuiltInRegistries.BLOCK.getValue(record.block()).getName();
+        if (record.entity() != null) return BuiltInRegistries.ENTITY_TYPE.get(record.block()).getDescription();
+        return BuiltInRegistries.BLOCK.get(record.block()).getName();
     }
 
     public static Component notFound(ItemStack query, int maxDistance) {

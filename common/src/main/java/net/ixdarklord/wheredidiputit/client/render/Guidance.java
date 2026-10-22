@@ -12,9 +12,9 @@ import net.ixdarklord.wheredidiputit.find.PathFinder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.util.ARGB;
+import net.minecraft.util.FastColor.ARGB32;
 import net.minecraft.util.Mth;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -131,7 +131,7 @@ public final class Guidance {
             while (next <= along + length && drawn < MAX_DOTS) {
                 Vec3 at = from.lerp(to, (next - along) / length);
                 float pulse = 0.5F + 0.5F * Mth.sin(frame.time() * 5.0F - (float) next * 0.9F);
-                dots.flat(at.x, at.y, at.z, 0.09F + 0.05F * pulse, 0.0F, ARGB.color(Math.round((0.35F + 0.5F * pulse) * 255.0F), rgb));
+                dots.flat(at.x, at.y, at.z, 0.09F + 0.05F * pulse, 0.0F, ARGB32.color(Math.round((0.35F + 0.5F * pulse) * 255.0F), rgb));
                 next += DOT_SPACING;
                 drawn++;
             }

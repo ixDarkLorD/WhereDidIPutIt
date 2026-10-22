@@ -7,7 +7,6 @@ import net.ixdarklord.wheredidiputit.memory.ContainerWatcher;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
@@ -27,8 +26,8 @@ public final class IgnoreKey {
     }
 
     /** A key was pressed in a container screen; true when it was this key and a remembered container is open. */
-    public static boolean onKeyPressed(KeyEvent event, AbstractContainerScreen<?> screen) {
-        if (!WDIPIClientConfig.ENABLED.get() || !KEY.matches(event)) return false;
+    public static boolean onKeyPressed(int keyCode, int scanCode, AbstractContainerScreen<?> screen) {
+        if (!WDIPIClientConfig.ENABLED.get() || !KEY.matches(keyCode, scanCode)) return false;
         Boolean ignored = ContainerWatcher.toggleIgnored(screen);
         if (ignored == null) return false;
         ScreenNotice.show(Component.translatable(ignored ? "gui.wheredidiputit.ignored" : "gui.wheredidiputit.unignored"));

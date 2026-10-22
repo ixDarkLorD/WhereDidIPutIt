@@ -1,7 +1,6 @@
 package net.ixdarklord.wheredidiputit.find;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.glfw.GLFW;
@@ -11,17 +10,19 @@ import org.lwjgl.glfw.GLFW;
  * open, so {@link #isDown()} stays false in an inventory, where a tooltip key is used.
  */
 public class HeldKeyMapping extends KeyMapping {
-    public HeldKeyMapping(String name, int keysym, Category category) {
+    public HeldKeyMapping(String name, int keysym, String category) {
         super(name, keysym, category);
     }
 
     public boolean isHeld() {
         if (this.isUnbound()) return false;
-        Window window = Minecraft.getInstance().getWindow();
-        return switch (this.key.getType()) {
+        long window = Minecraft.getInstance().getWindow().getWindow();
+        // The bound key, by its saved name: 1.21.1's mapping keeps it private.
+        InputConstants.Key key = InputConstants.getKey(this.saveString());
+        return switch (key.getType()) {
             // The same check as the game's own hasShiftDown().
-            case KEYSYM -> InputConstants.isKeyDown(window, this.key.getValue());
-            case MOUSE -> GLFW.glfwGetMouseButton(window.handle(), this.key.getValue()) == GLFW.GLFW_PRESS;
+            case KEYSYM -> InputConstants.isKeyDown(window, key.getValue());
+            case MOUSE -> GLFW.glfwGetMouseButton(window, key.getValue()) == GLFW.GLFW_PRESS;
             // A key bound by its scancode alone has no key code to ask about.
             case SCANCODE -> false;
         };

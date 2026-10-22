@@ -9,7 +9,7 @@ import net.ixdarklord.wheredidiputit.live.NetworkReaders;
 import net.ixdarklord.wheredidiputit.live.TeamSharingServer;
 import net.ixdarklord.wheredidiputit.live.WDIPICommands;
 import net.ixdarklord.wheredidiputit.network.WDIPINetwork;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +26,7 @@ public final class WhereDidIPutIt implements ModConstructor {
 
     @Override
     public void onConstructMod() {
-        LOGGER.info("Loading {} on {}", MOD_NAME, Platform.isFabric() ? "Fabric" : "NeoForge");
+        LOGGER.info("Loading {} on {}", MOD_NAME, Platform.isFabric() ? "Fabric" : Platform.isForge() ? "Forge" : "NeoForge");
 
         WDIPIConfigs.register();
         WDIPINetwork.register();
@@ -36,7 +36,7 @@ public final class WhereDidIPutIt implements ModConstructor {
         if (Platform.isModLoaded(RefinedStorageNetworkReader.MOD_ID)) NetworkReaders.register(new RefinedStorageNetworkReader());
     }
 
-    public static Identifier id(String path) {
-        return Identifier.fromNamespaceAndPath(MOD_ID, path.toLowerCase(Locale.ROOT));
+    public static ResourceLocation id(String path) {
+        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path.toLowerCase(Locale.ROOT));
     }
 }

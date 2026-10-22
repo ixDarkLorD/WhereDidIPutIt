@@ -9,10 +9,9 @@ import net.ixdarklord.wheredidiputit.find.TooltipLines;
 import net.ixdarklord.wheredidiputit.memory.ContainerMemory;
 import net.ixdarklord.wheredidiputit.memory.DimensionMemory;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
@@ -87,13 +86,19 @@ public final class SearchScreen extends Screen {
         return (this.shown.size() + COLUMNS - 1) / COLUMNS;
     }
 
+    // The panel goes with the background, under the search field the screen draws over it.
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.renderBackground(graphics, mouseX, mouseY, partialTick);
         ScreenStyle.panel(graphics, this.left, this.top, PANEL_WIDTH, PANEL_HEIGHT);
         ScreenStyle.header(graphics, this.font, this.left, this.top, PANEL_WIDTH, this.title,
                 Component.translatable("gui.wheredidiputit.search.count", this.shown.size()));
         ScreenStyle.field(graphics, this.left + PADDING, this.top + 31, PANEL_WIDTH - PADDING * 2, 16, this.search.isFocused());
-        super.extractRenderState(graphics, mouseX, mouseY, a);
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.render(graphics, mouseX, mouseY, partialTick);
 
         int gridLeft = this.left + PADDING;
         int gridTop = this.top + GRID_TOP;
@@ -106,8 +111,8 @@ public final class SearchScreen extends Screen {
                 int index = (this.scroll + row) * COLUMNS + column;
                 if (index >= this.shown.size()) continue;
                 StoredStacks.Entry entry = this.shown.get(index);
-                graphics.item(entry.stack(), x + 1, y + 1);
-                graphics.itemDecorations(this.font, entry.stack(), x + 1, y + 1, ItemMarker.count(entry.count()));
+                graphics.renderItem(entry.stack(), x + 1, y + 1);
+                graphics.renderItemDecorations(this.font, entry.stack(), x + 1, y + 1, ItemMarker.count(entry.count()));
                 if (index == hovered) ScreenStyle.slotHover(graphics, x, y);
             }
         }
@@ -116,7 +121,7 @@ public final class SearchScreen extends Screen {
             Component empty = Component.translatable(this.all.isEmpty() ? "gui.wheredidiputit.search.nothing" : "gui.wheredidiputit.search.no_match");
             int middle = gridLeft + COLUMNS * SLOT / 2;
             graphics.fill(gridLeft + 1, gridTop + ROWS * SLOT / 2 - 9, gridLeft + COLUMNS * SLOT - 1, gridTop + ROWS * SLOT / 2 + 9, 0xC00C1015);
-            graphics.centeredText(this.font, empty, middle, gridTop + ROWS * SLOT / 2 - 4, ScreenStyle.MUTED);
+            graphics.drawCenteredString(this.font, empty, middle, gridTop + ROWS * SLOT / 2 - 4, ScreenStyle.MUTED);
         }
         int hintY = this.top + PANEL_HEIGHT - PADDING - 11;
         ScreenStyle.hints(graphics, this.font, this.left + PANEL_WIDTH / 2, hintY,
@@ -127,9 +132,9 @@ public final class SearchScreen extends Screen {
             List<Component> lines = new ArrayList<>(getTooltipFromItem(this.minecraft, entry.stack()));
             lines.add(Component.empty());
             lines.add(TooltipLines.line("stored", TooltipLines.stored(entry.count(), entry.containers())));
-            graphics.setComponentTooltipForNextFrame(this.font, lines, mouseX, mouseY);
+            graphics.renderComponentTooltip(this.font, lines, mouseX, mouseY);
         }
-        ScreenNotice.extract(graphics, this.left + PANEL_WIDTH / 2, this.top);
+        ScreenNotice.render(graphics, this.left + PANEL_WIDTH / 2, this.top);
     }
 
     // The index in the shown list of the slot under the mouse, or -1.
@@ -142,13 +147,13 @@ public final class SearchScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        int index = this.slotAt(event.x(), event.y());
-        if (index >= 0 && (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT || event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT)) {
-            FindKey.find(this.shown.get(index).stack(), event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        int index = this.slotAt(mouseX, mouseY);
+        if (index >= 0 && (button == GLFW.GLFW_MOUSE_BUTTON_LEFT || button == GLFW.GLFW_MOUSE_BUTTON_RIGHT)) {
+            FindKey.find(this.shown.get(index).stack(), button == GLFW.GLFW_MOUSE_BUTTON_RIGHT);
             return true;
         }
-        return super.mouseClicked(event, doubleClick);
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override

@@ -17,7 +17,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import net.minecraft.world.Container;
 import net.minecraft.world.RandomizableContainer;
 import net.minecraft.world.item.ItemStack;
@@ -78,7 +78,7 @@ public final class LiveSearchServer {
         LAST_REQUEST.put(player.getUUID(), now);
         boolean nested = request.nested() && WDIPIServerConfig.INCLUDE_SHULKER_CONTENTS.get();
         ItemMatcher matcher = ItemMatcher.of(request.query(), request.mode(), nested, request.ignoredTags());
-        reply(player, request, FindResultPayload.Status.OK, radius, search(player.level(), player.getEyePosition(), matcher, radius, player));
+        reply(player, request, FindResultPayload.Status.OK, radius, search(player.serverLevel(), player.getEyePosition(), matcher, radius, player));
     }
 
     private static void reply(ServerPlayer player, FindRequestPayload request, FindResultPayload.Status status, int radius, List<FindResultPayload.Hit> hits) {

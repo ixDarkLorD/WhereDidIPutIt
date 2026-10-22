@@ -1,17 +1,17 @@
 package net.ixdarklord.wheredidiputit.client.hud;
 
+import com.mojang.math.Axis;
 import net.ixdarklord.coolcatcore.api.event.v2.client.ClientGuiEvents;
 import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 import net.ixdarklord.wheredidiputit.client.render.ContainerHighlight;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.ARGB;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FastColor.ARGB32;
 import net.minecraft.util.Mth;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -27,13 +27,15 @@ import java.util.List;
 public final class TargetArrow {
     // Why Can't I Sleep?'s arrow, drawn by tools/gen_arrow_texture.ps1: two frames side by side, solid then hollow,
     // white and grey so they take the highlight color. Only the solid one is drawn.
-    private static final Identifier ARROW = WhereDidIPutIt.id("textures/gui/arrow.png");
+    private static final ResourceLocation ARROW = WhereDidIPutIt.id("textures/gui/arrow.png");
     private static final int SIZE = 16;
     private static final int SHEET_WIDTH = SIZE * 2;
     // How far from the crosshair the arrows sit, in GUI pixels.
     private static final float RADIUS = 32.0F;
     // The room one arrow takes along the ring, in GUI pixels: closer ones are fanned apart.
     private static final float SPACING = 15.0F;
+    // GUI items are drawn 150 and more deep; the arrows go in front of them.
+    private static final float ABOVE_ITEMS = 400.0F;
 
     private TargetArrow() {
     }
@@ -42,7 +44,7 @@ public final class TargetArrow {
         ClientGuiEvents.RENDER_HUD.register(TargetArrow::render);
     }
 
-    private static void render(GuiGraphicsExtractor graphics, DeltaTracker delta) {
+    private static void render(GuiGraphics graphics, DeltaTracker delta) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.options.hideGui || !WDIPIClientConfig.OFF_SCREEN_ARROW.get()) return;
         List<Arrow> arrows = new ArrayList<>();
@@ -54,24 +56,23 @@ public final class TargetArrow {
         }
         if (arrows.isEmpty()) return;
         fanOut(arrows, SPACING / RADIUS);
-        // A layer of their own, so nothing drawn earlier on the HUD (the item markers' items) covers them.
-        graphics.nextStratum();
 
         int rgb = WDIPIClientConfig.HIGHLIGHT_COLOR.get() & 0xFFFFFF;
         float radius = RADIUS + 2.0F * Mth.sin(now / 160.0F);
         for (Arrow arrow : arrows) {
-            graphics.pose().pushMatrix();
-            graphics.pose().translate(graphics.guiWidth() / 2.0F, graphics.guiHeight() / 2.0F);
-            graphics.pose().rotate(arrow.angle);
-            graphics.pose().translate(radius, 0.0F);
-            graphics.blit(RenderPipelines.GUI_TEXTURED, ARROW, -SIZE / 2, -SIZE / 2, 0.0F, 0.0F, SIZE, SIZE, SHEET_WIDTH, SIZE,
-                    ARGB.color(Math.round(arrow.alpha * 255.0F), rgb));
-            graphics.pose().popMatrix();
+            graphics.pose().pushPose();
+            // In front of everything drawn earlier on the HUD (the item markers' items, which sit at a depth of their own).
+            graphics.pose().translate(graphics.guiWidth() / 2.0F, graphics.guiHeight() / 2.0F, ABOVE_ITEMS);
+            graphics.pose().mulPose(Axis.ZP.rotation(arrow.angle));
+            graphics.pose().translate(radius, 0.0F, 0.0F);
+            TintedBlit.blit(graphics, ARROW, -SIZE / 2, -SIZE / 2, 0.0F, 0.0F, SIZE, SIZE, SHEET_WIDTH, SIZE,
+                    ARGB32.color(Math.round(arrow.alpha * 255.0F), rgb));
+            graphics.pose().popPose();
         }
     }
 
     // Whether every corner of the box is inside the view.
-    private static boolean fullyInView(Minecraft minecraft, GuiGraphicsExtractor graphics, AABB box) {
+    private static boolean fullyInView(Minecraft minecraft, GuiGraphics graphics, AABB box) {
         for (int i = 0; i < 8; i++) {
             Vec3 corner = new Vec3((i & 1) == 0 ? box.minX : box.maxX, (i & 2) == 0 ? box.minY : box.maxY, (i & 4) == 0 ? box.minZ : box.maxZ);
             if (!ScreenProjection.of(minecraft, graphics, corner).inView()) return false;

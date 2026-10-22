@@ -10,7 +10,7 @@ import net.ixdarklord.wheredidiputit.network.FindRequestPayload;
 import net.ixdarklord.wheredidiputit.network.FindResultPayload;
 import net.ixdarklord.wheredidiputit.network.HelloPayload;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 

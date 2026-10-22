@@ -12,12 +12,10 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.context.ContextMap;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.display.RecipeDisplayEntry;
-import net.minecraft.world.item.crafting.display.SlotDisplayContext;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,11 +46,12 @@ public final class RecipeNeeds {
         if (player == null || level == null || memory == null) return;
 
         Map<Ingredient, Integer> missing = null;
-        ContextMap context = SlotDisplayContext.fromLevel(level);
         for (RecipeCollection collection : player.getRecipeBook().getCollections()) {
-            for (RecipeDisplayEntry recipe : collection.getRecipes()) {
-                if (recipe.craftingRequirements().isEmpty() || recipe.resultItems(context).stream().noneMatch(result -> result.is(target.getItem()))) continue;
-                Map<Ingredient, Integer> lacking = missing(recipe.craftingRequirements().get(), player.getInventory());
+            for (RecipeHolder<?> recipe : collection.getRecipes()) {
+                // The book's collections hold every recipe the client was sent; only the unlocked ones count.
+                if (!player.getRecipeBook().contains(recipe) || recipe.value().getIngredients().isEmpty()
+                        || !recipe.value().getResultItem(level.registryAccess()).is(target.getItem())) continue;
+                Map<Ingredient, Integer> lacking = missing(recipe.value().getIngredients(), player.getInventory());
                 if (missing == null || total(lacking) < total(missing)) missing = lacking;
             }
         }
@@ -90,7 +89,7 @@ public final class RecipeNeeds {
         Map<Ingredient, Integer> missing = new LinkedHashMap<>();
         needed.forEach((ingredient, count) -> {
             int have = 0;
-            for (ItemStack stack : inventory.getNonEquipmentItems()) {
+            for (ItemStack stack : inventory.items) {
                 if (ingredient.test(stack)) have += stack.getCount();
             }
             if (have < count) missing.put(ingredient, count - have);
