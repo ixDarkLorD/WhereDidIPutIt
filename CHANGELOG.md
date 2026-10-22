@@ -1,7 +1,7 @@
 # Changelog
 This file is for listing all the changes to this project
 
-## v26.3-1 Release | Unreleased
+## v26.3-1 Release | 2026-10-22
 ### ✨ New Features
 - Counts in the search screen, container browser and contents preview shrink to fit their slot when they have three digits or more (128, 1.2k).
 - The mod has a logo in the mods list.
