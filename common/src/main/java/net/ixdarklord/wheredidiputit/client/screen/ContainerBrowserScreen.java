@@ -370,8 +370,7 @@ public final class ContainerBrowserScreen extends Screen {
                 int index = (this.gridScroll + row) * this.columns + column;
                 if (index >= record.items().size()) continue;
                 StoredItem item = record.items().get(index);
-                graphics.renderItem(item.stack(), slotX + 1, slotY + 1);
-                graphics.renderItemDecorations(this.font, item.stack(), slotX + 1, slotY + 1, ItemMarker.count(item.count()));
+                ScreenStyle.slotItem(graphics, this.font, item.stack(), slotX + 1, slotY + 1, ItemMarker.count(item.count()));
                 if (mouseX >= slotX && mouseX < slotX + SLOT && mouseY >= slotY && mouseY < slotY + SLOT) {
                     ScreenStyle.slotHover(graphics, slotX, slotY);
                     hoveredItem = item;
