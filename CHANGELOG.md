@@ -1,7 +1,7 @@
 # Changelog
 This file is for listing all the changes to this project
 
-## v1.21.1-1 Release | Unreleased
+## v1.21.1-1 Release | 2026-10-22
 ### 🛠️ Changes
 - Ported to Minecraft 1.21.1 (Forge, Fabric and NeoForge), with every feature of v26.1.2-1.
 - Forge is new: everything works there except the storage mods, none of which has a Forge build for 1.21.1, and REI, which has none either (JEI works).
