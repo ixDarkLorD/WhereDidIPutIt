@@ -211,7 +211,7 @@ public final class FindKey {
 
     /** Says something on the action bar and over the open screen: with a low note when it is a failure, a soft one when not. */
     static void tell(Minecraft minecraft, Component message, boolean good) {
-        minecraft.gui.setOverlayMessage(message, false);
+        minecraft.gui.hud.setOverlayMessage(message, false);
         ScreenNotice.show(message);
         minecraft.getSoundManager().play(good ? SimpleSoundInstance.forUI(SoundEvents.NOTE_BLOCK_CHIME.value(), 1.2F, 0.6F)
                 : SimpleSoundInstance.forUI(SoundEvents.NOTE_BLOCK_BASS.value(), 0.7F, 0.6F));
@@ -226,7 +226,7 @@ public final class FindKey {
         if (minecraft.player != null) {
             minecraft.player.closeContainer();
         } else {
-            minecraft.setScreen(null);
+            minecraft.gui.setScreen(null);
         }
     }
 }

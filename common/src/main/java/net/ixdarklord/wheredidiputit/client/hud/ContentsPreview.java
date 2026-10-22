@@ -47,7 +47,7 @@ public final class ContentsPreview {
 
     private static void render(GuiGraphicsExtractor graphics, DeltaTracker delta) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || minecraft.options.hideGui || !KEY.isHeld()) return;
+        if (minecraft.level == null || minecraft.gui.hud.isHidden() || !KEY.isHeld()) return;
         DimensionMemory memory = ContainerMemory.dimension(minecraft.level.dimension());
         if (memory == null) return;
         ContainerHighlight.Target nearest = null;
