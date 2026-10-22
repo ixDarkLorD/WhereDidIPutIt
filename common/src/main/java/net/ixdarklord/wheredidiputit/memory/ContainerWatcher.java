@@ -80,8 +80,8 @@ public final class ContainerWatcher {
     }
 
     static void tick(Minecraft minecraft) {
-        if (watched != null && minecraft.screen != watched) stopWatching(minecraft);
-        if (watched == null && minecraft.screen instanceof AbstractContainerScreen<?> screen && !isPlayerInventory(screen)) {
+        if (watched != null && minecraft.gui.screen() != watched) stopWatching(minecraft);
+        if (watched == null && minecraft.gui.screen() instanceof AbstractContainerScreen<?> screen && !isPlayerInventory(screen)) {
             startWatching(minecraft, screen);
         }
     }

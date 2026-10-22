@@ -70,7 +70,7 @@ public final class StoredStacks {
         ItemContainerContents container = stack.get(DataComponents.CONTAINER);
         if (container != null) container.nonEmptyItemCopyStream().forEach(inner -> add(byItem, here, inner, inner.getCount() * count, true, depth + 1));
         BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
-        if (bundle != null) bundle.itemCopyStream().forEach(inner -> add(byItem, here, inner, inner.getCount() * count, true, depth + 1));
+        if (bundle != null) bundle.itemCopies().forEach(inner -> add(byItem, here, inner, inner.getCount() * count, true, depth + 1));
     }
 
     /**

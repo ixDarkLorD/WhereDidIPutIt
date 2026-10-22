@@ -1,10 +1,10 @@
 package net.ixdarklord.wheredidiputit.find;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.client.Minecraft;
-import org.lwjgl.glfw.GLFW;
+import org.lwjgl.sdl.SDLMouse;
+
+import java.nio.FloatBuffer;
 
 /**
  * A key mapping read by whether its key is held right now. The game updates key mappings only while no screen is
@@ -17,13 +17,11 @@ public class HeldKeyMapping extends KeyMapping {
 
     public boolean isHeld() {
         if (this.isUnbound()) return false;
-        Window window = Minecraft.getInstance().getWindow();
         return switch (this.key.getType()) {
-            // The same check as the game's own hasShiftDown().
-            case KEYSYM -> InputConstants.isKeyDown(window, this.key.getValue());
-            case MOUSE -> GLFW.glfwGetMouseButton(window.handle(), this.key.getValue()) == GLFW.GLFW_PRESS;
-            // A key bound by its scancode alone has no key code to ask about.
-            case SCANCODE -> false;
+            // SDL's keyboard state, as the game reads held keys.
+            case KEYBOARD -> InputConstants.isKeyDown(this.key.getValue());
+            // SDL's pressed buttons, one bit each from the left button up.
+            case MOUSE -> (SDLMouse.SDL_GetMouseState((FloatBuffer) null, null) & (1 << (this.key.getValue() - 1))) != 0;
         };
     }
 }

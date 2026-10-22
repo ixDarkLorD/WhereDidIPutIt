@@ -1,5 +1,6 @@
 package net.ixdarklord.wheredidiputit.find;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.ixdarklord.coolcatcore.api.client.registry.KeyMappingRegistry;
 import net.ixdarklord.coolcatcore.api.event.v2.client.ItemTooltipEvents;
 import net.ixdarklord.wheredidiputit.client.hud.ItemMarker;
@@ -16,7 +17,6 @@ import net.minecraft.util.Util;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.Comparator;
 import java.util.List;
@@ -31,7 +31,7 @@ import java.util.List;
  * settings or the remembered containers change.
  */
 public final class LastSeenTooltip {
-    public static final HeldKeyMapping KEY = new HeldKeyMapping("key.wheredidiputit.last_seen", GLFW.GLFW_KEY_LEFT_SHIFT, FindKey.CATEGORY);
+    public static final HeldKeyMapping KEY = new HeldKeyMapping("key.wheredidiputit.last_seen", InputConstants.KEY_LSHIFT, FindKey.CATEGORY);
 
     private static @Nullable Answer last;
 

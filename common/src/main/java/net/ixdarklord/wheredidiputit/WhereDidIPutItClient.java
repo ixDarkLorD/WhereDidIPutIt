@@ -9,7 +9,6 @@ import net.ixdarklord.wheredidiputit.client.hud.TargetArrow;
 import net.ixdarklord.wheredidiputit.client.render.ContainerHighlight;
 import net.ixdarklord.wheredidiputit.client.render.Guidance;
 import net.ixdarklord.wheredidiputit.client.screen.ScreenKeys;
-import net.ixdarklord.wheredidiputit.compat.refinedstorage.RefinedStorageTerminal;
 import net.ixdarklord.wheredidiputit.compat.rei.ReiCompat;
 import net.ixdarklord.wheredidiputit.find.FindKey;
 import net.ixdarklord.wheredidiputit.find.IgnoreKey;
@@ -47,6 +46,6 @@ public final class WhereDidIPutItClient implements ClientModConstructor {
         // JEI's plugin registers itself when JEI loads it; REI is asked directly.
         if (Platform.isModLoaded(ReiCompat.MOD_ID)) ReiCompat.init();
         // Storage terminals whose mods have a loader-free jar; the others are registered by the loader modules.
-        if (Platform.isModLoaded(RefinedStorageTerminal.MOD_ID)) StorageTerminals.register(new RefinedStorageTerminal());
+        // Refined Storage 2 has no 26.3 build; its RefinedStorageTerminal is left out of the build (common/build.gradle).
     }
 }

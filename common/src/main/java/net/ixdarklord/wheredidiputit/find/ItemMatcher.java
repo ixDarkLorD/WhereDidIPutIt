@@ -112,7 +112,7 @@ public final class ItemMatcher {
         if (depth >= MAX_DEPTH) return ItemStack.EMPTY;
         ItemContainerContents container = stack.get(DataComponents.CONTAINER);
         BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
-        List<ItemStack> inside = container != null ? container.nonEmptyItemCopyStream().toList() : bundle != null ? bundle.itemCopyStream().toList() : List.of();
+        List<ItemStack> inside = container != null ? container.nonEmptyItemCopyStream().toList() : bundle != null ? bundle.itemCopies().toList() : List.of();
         for (ItemStack inner : inside) {
             if (this.test.test(inner)) return inner.copyWithCount(1);
             ItemStack deeper = this.firstInside(inner, depth + 1);
@@ -151,7 +151,7 @@ public final class ItemMatcher {
         }
         BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
         if (bundle != null) {
-            count += bundle.itemCopyStream().mapToLong(inner -> this.count(inner, depth + 1) * inner.getCount()).sum();
+            count += bundle.itemCopies().mapToLong(inner -> this.count(inner, depth + 1) * inner.getCount()).sum();
         }
         return count;
     }

@@ -41,7 +41,7 @@ public final class SortingHints {
     private static void append(ItemStack stack, List<Component> lines) {
         Minecraft minecraft = Minecraft.getInstance();
         if (stack.isEmpty() || minecraft.level == null || minecraft.player == null || !WDIPIClientConfig.ENABLED.get() || !WDIPIClientConfig.SORTING_HINTS.get()) return;
-        if (!(minecraft.screen instanceof AbstractContainerScreen<?> screen)) return;
+        if (!(minecraft.gui.screen() instanceof AbstractContainerScreen<?> screen)) return;
         BlockPos open = ContainerWatcher.openContainer(screen);
         DimensionMemory memory = ContainerMemory.dimension(minecraft.level.dimension());
         if (open == null || memory == null) return;

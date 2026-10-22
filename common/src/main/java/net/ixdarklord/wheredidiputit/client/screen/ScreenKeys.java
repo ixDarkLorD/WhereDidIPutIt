@@ -8,14 +8,13 @@ import net.ixdarklord.wheredidiputit.find.FindKey;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Supplier;
 
 /** The keys that open the mod's screens while playing: the item search (Y) and the container browser (K). */
 public final class ScreenKeys {
-    public static final KeyMapping SEARCH = new KeyMapping("key.wheredidiputit.search", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Y, FindKey.CATEGORY);
-    public static final KeyMapping BROWSER = new KeyMapping("key.wheredidiputit.browser", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, FindKey.CATEGORY);
+    public static final KeyMapping SEARCH = new KeyMapping("key.wheredidiputit.search", InputConstants.Type.KEYBOARD, InputConstants.KEY_Y, FindKey.CATEGORY);
+    public static final KeyMapping BROWSER = new KeyMapping("key.wheredidiputit.browser", InputConstants.Type.KEYBOARD, InputConstants.KEY_K, FindKey.CATEGORY);
 
     private ScreenKeys() {
     }
@@ -31,7 +30,7 @@ public final class ScreenKeys {
 
     private static void open(Minecraft minecraft, KeyMapping key, Supplier<Screen> screen) {
         while (key.consumeClick()) {
-            if (minecraft.screen == null && minecraft.level != null && WDIPIClientConfig.ENABLED.get()) minecraft.setScreen(screen.get());
+            if (minecraft.gui.screen() == null && minecraft.level != null && WDIPIClientConfig.ENABLED.get()) minecraft.gui.setScreen(screen.get());
         }
     }
 }

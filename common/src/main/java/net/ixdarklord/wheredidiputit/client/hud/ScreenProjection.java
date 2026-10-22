@@ -18,7 +18,7 @@ import org.joml.Vector3fc;
  */
 public record ScreenProjection(boolean inView, float x, float y, float angle) {
     public static ScreenProjection of(Minecraft minecraft, GuiGraphicsExtractor graphics, Vec3 point) {
-        Camera camera = minecraft.gameRenderer.getMainCamera();
+        Camera camera = minecraft.gameRenderer.mainCamera();
         Vec3 to = point.subtract(camera.position());
         Vector3fc forward = camera.forwardVector();
         Vector3fc up = camera.upVector();
