@@ -1,7 +1,7 @@
 # Changelog
 This file is for listing all the changes to this project
 
-## v26.2-1 Release | Unreleased
+## v26.2-1 Release | 2026-10-22
 ### 🛠️ Changes
 - Ported to Minecraft 26.2 (Fabric and NeoForge), with every feature of v26.1.2-1.
 - Refined Storage and Simple Storage Network have no 26.2 build yet, so their terminals aren't read in this version. Applied Energistics 2, Tom's Simple Storage, JEI and REI work as before.
