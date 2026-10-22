@@ -26,7 +26,7 @@ This file is for listing all the changes to this project
 - On NeoForge, the mod no longer stops you joining servers that don't have it, even servers without CoolCatLib (needs the matching CoolCatLib).
 - Ghosts are drawn by the game's own renderers with your camera and then made see-through as a whole, so they look like the real block from every side and up close: no inside or back faces show through, and nothing warps. They're unshaded and full bright, so they're easy to see through walls.
 - **Search screen** (Y): find any remembered item by name, `#tag` or `@mod`, without holding or hovering it. Left click shows the nearest container, right click all of them.
-- **Container browser** (K): every remembered container here, nearest first, searchable by name or contents, with what each held, and buttons to show it, skip it in searches, or forget it.
+- **Container browser** (K): every remembered container here, nearest first, searchable by name or contents, with what each held, and buttons to show it, skip it in searches, or forget it. It shrinks to fit small windows.
 - The search screen and the container browser have a cleaner look in the highlight color: a header, a search well, inset slots, scrollbars, badges and flat buttons. The browser can sort by nearest, most recent or name, and shows a glimpse of each container's items in its row.
 - **Skipping containers**: leave a container (a trash chest, a farm's output) out of searches with the browser or a key (unbound by default) while it's open. It's still remembered.
 - The item marker says how long ago a remembered container was last seen ("2m ago"), as what it holds may have changed since. It can be turned off.
@@ -35,7 +35,7 @@ This file is for listing all the changes to this project
 - **Find similar** (key, unbound by default): every container with something like the hovered item: the same enchantment, the same potion, or the same item. Also a match mode ("Similar").
 - **Find room** (key, unbound by default): the nearest container with room for the hovered item, one already holding some first. The marker shows how many more fit.
 - **Find missing ingredients** (key, unbound by default): for an item you have the recipe for, the containers holding what your inventory lacks to craft it.
-- **Path line**: after finding one container, glowing dots on the ground lead along a walking route to it, until you open it.
+- **Path line**: after finding one container, a glowing line runs from your feet straight to it, up or down and through walls, with chevrons drifting the way to go, until you open it. It follows you smoothly as you move and fades out a few blocks ahead. It stops after a minute away from the keyboard.
 - **Compass**: after the highlight, a small compass at the top of the screen keeps pointing to the container found, with its distance, until you open it.
 - A soft chime sounds from the direction of each container found.
 - **Contents preview** (hold a key, unbound by default): the slots of the highlighted container nearest your crosshair, as last seen, with the item found framed.
