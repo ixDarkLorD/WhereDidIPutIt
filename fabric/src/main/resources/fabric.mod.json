@@ -20,10 +20,12 @@
   "environment": "${mod_environment}",
   "entrypoints": {
     "coolcatlib:common": [
-      "net.ixdarklord.wheredidiputit.WhereDidIPutIt"
+      "net.ixdarklord.wheredidiputit.WhereDidIPutIt",
+      "net.ixdarklord.wheredidiputit.fabric.WhereDidIPutItFabricCommon"
     ],
     "coolcatlib:client": [
-      "net.ixdarklord.wheredidiputit.WhereDidIPutItClient"
+      "net.ixdarklord.wheredidiputit.WhereDidIPutItClient",
+      "net.ixdarklord.wheredidiputit.fabric.WhereDidIPutItFabricClient"
     ],
     "jei_mod_plugin": [
       "net.ixdarklord.wheredidiputit.compat.jei.WDIPIJeiPlugin"
