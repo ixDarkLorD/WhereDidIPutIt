@@ -31,7 +31,7 @@ public final class ScreenKeys {
 
     private static void open(Minecraft minecraft, KeyMapping key, Supplier<Screen> screen) {
         while (key.consumeClick()) {
-            if (minecraft.screen == null && minecraft.level != null && WDIPIClientConfig.ENABLED.get()) minecraft.setScreen(screen.get());
+            if (minecraft.gui.screen() == null && minecraft.level != null && WDIPIClientConfig.ENABLED.get()) minecraft.gui.setScreen(screen.get());
         }
     }
 }

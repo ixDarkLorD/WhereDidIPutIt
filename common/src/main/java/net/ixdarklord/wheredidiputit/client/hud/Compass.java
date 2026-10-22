@@ -37,7 +37,7 @@ public final class Compass {
     private static void render(GuiGraphicsExtractor graphics, DeltaTracker delta) {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
-        if (player == null || minecraft.level == null || minecraft.options.hideGui || !WDIPIClientConfig.COMPASS.get()) return;
+        if (player == null || minecraft.level == null || minecraft.gui.hud.isHidden() || !WDIPIClientConfig.COMPASS.get()) return;
         Guidance.Target target = Guidance.current(minecraft.level);
         // While the container is highlighted its own arrow and marker show the way.
         if (target == null || !ContainerHighlight.current(minecraft.level).isEmpty()) return;

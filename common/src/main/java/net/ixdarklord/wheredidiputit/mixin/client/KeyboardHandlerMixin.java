@@ -27,7 +27,7 @@ public abstract class KeyboardHandlerMixin {
 
     @Inject(method = "keyPress", at = @At("HEAD"), cancellable = true)
     private void wheredidiputit$onKeyPress(long handle, int action, KeyEvent event, CallbackInfo ci) {
-        Screen screen = this.minecraft.screen;
+        Screen screen = this.minecraft.gui.screen();
         if (action != GLFW.GLFW_PRESS || screen == null || screen instanceof AbstractContainerScreen<?>) return;
         if (handle != this.minecraft.getWindow().handle()) return;
         if (FindKey.onKeyPressed(event, HoveredStacks.fromViewers(screen))) ci.cancel();

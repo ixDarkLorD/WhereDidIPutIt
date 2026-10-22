@@ -16,11 +16,11 @@ out vec4 fragColor;
 
 void main() {
     ivec2 pixel = ivec2(gl_FragCoord.xy);
-    // Where a ghost was drawn its depth is less than the cleared 1; its colour's alpha can't tell, as the block
-    // pipelines don't all write alpha.
+    // Depth is reversed (26.2): cleared to 0, nearer is larger. Where a ghost was drawn its depth is more than the
+    // cleared 0; its colour's alpha can't tell, as the block pipelines don't all write alpha.
     float ghostDepth = texelFetch(GhostDepthSampler, pixel, 0).r;
-    if (ghostDepth >= 1.0) discard;
-    if (texelFetch(DepthSampler, pixel, 0).r >= ghostDepth) discard;
+    if (ghostDepth <= 0.0) discard;
+    if (texelFetch(DepthSampler, pixel, 0).r <= ghostDepth) discard;
     vec3 ghost = texelFetch(GhostSampler, pixel, 0).rgb;
     fragColor = vec4(ghost * ColorModulator.rgb, ColorModulator.a);
 }

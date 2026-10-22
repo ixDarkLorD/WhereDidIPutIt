@@ -1,8 +1,11 @@
 package net.ixdarklord.wheredidiputit.client.render;
 
+import com.mojang.blaze3d.GpuFormat;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.buffers.Std140Builder;
+import com.mojang.blaze3d.pipeline.BindGroupLayout;
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
@@ -14,9 +17,7 @@ import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeStorage;
@@ -41,7 +42,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalInt;
+import java.util.Optional;
 
 /**
  * Found containers' ghosts: their blocks drawn by the game's own renderers, with the player's own camera, into a
@@ -70,12 +71,12 @@ public final class ContainerGhost {
             .withLocation(WhereDidIPutIt.id("pipeline/ghost"))
             .withVertexShader("core/screenquad")
             .withFragmentShader(WhereDidIPutIt.id("core/ghost"))
-            .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
-            .withSampler("GhostSampler")
-            .withSampler("GhostDepthSampler")
-            .withSampler("DepthSampler")
+            .withBindGroupLayout(BindGroupLayout.builder().withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER).build())
+            .withBindGroupLayout(BindGroupLayout.builder().withSampler("GhostSampler").build())
+            .withBindGroupLayout(BindGroupLayout.builder().withSampler("GhostDepthSampler").build())
+            .withBindGroupLayout(BindGroupLayout.builder().withSampler("DepthSampler").build())
             .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
-            .withVertexFormat(DefaultVertexFormat.EMPTY, VertexFormat.Mode.TRIANGLES)
+            .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
             .build();
 
     private static @Nullable TextureTarget target;
@@ -116,7 +117,7 @@ public final class ContainerGhost {
     public static void draw(List<Ghost> ghosts, int color) {
         if (ghosts.isEmpty() || (color >>> 24) == 0) return;
         Minecraft minecraft = Minecraft.getInstance();
-        RenderTarget main = minecraft.getMainRenderTarget();
+        RenderTarget main = minecraft.gameRenderer.mainRenderTarget();
         if (main.getDepthTextureView() == null || main.getColorTextureView() == null) return;
         TextureTarget ghostTarget = target(main);
         drawBlocks(minecraft, ghostTarget, ghosts);
@@ -125,8 +126,9 @@ public final class ContainerGhost {
 
     // The ghosts' blocks, opaque, with the camera the level was drawn with.
     private static void drawBlocks(Minecraft minecraft, TextureTarget ghostTarget, List<Ghost> ghosts) {
-        RenderSystem.getDevice().createCommandEncoder().clearColorAndDepthTextures(ghostTarget.getColorTexture(), 0, ghostTarget.getDepthTexture(), 1.0);
-        CameraRenderState camera = minecraft.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState;
+        // Depth is reversed since 26.2: cleared to 0, nearer is larger.
+        RenderSystem.getDevice().createCommandEncoder().clearColorAndDepthTextures(ghostTarget.getColorTexture(), new Vector4f(0), ghostTarget.getDepthTexture(), 0.0);
+        CameraRenderState camera = minecraft.gameRenderer.gameRenderState().levelRenderState.cameraRenderState;
         // The level has popped its view from the model-view stack by now: it goes back on for these blocks.
         Matrix4fStack modelView = RenderSystem.getModelViewStack();
         modelView.pushMatrix();
@@ -137,8 +139,8 @@ public final class ContainerGhost {
             if (resolver == null) resolver = new BlockModelResolver(minecraft.getModelManager());
             BlockModelResolver models = resolver;
             RenderSystem.setShaderLights(lights());
-            FeatureRenderDispatcher features = minecraft.gameRenderer.getFeatureRenderDispatcher();
-            SubmitNodeStorage storage = features.getSubmitNodeStorage();
+            FeatureRenderDispatcher features = minecraft.gameRenderer.featureRenderDispatcher();
+            SubmitNodeStorage storage = new SubmitNodeStorage();
             PoseStack pose = new PoseStack();
             for (Ghost ghost : ghosts) {
                 for (Placed block : ghost.blocks()) {
@@ -157,10 +159,9 @@ public final class ContainerGhost {
                     pose.popPose();
                 }
             }
-            features.renderAllFeatures();
-            minecraft.renderBuffers().bufferSource().endBatch();
+            features.renderAllFeatures(storage);
         } finally {
-            minecraft.gameRenderer.getLighting().setupFor(Lighting.Entry.LEVEL);
+            minecraft.gameRenderer.lighting().setupFor(Lighting.Entry.LEVEL);
             RenderSystem.outputColorTextureOverride = null;
             RenderSystem.outputDepthTextureOverride = null;
             modelView.popMatrix();
@@ -189,21 +190,21 @@ public final class ContainerGhost {
         var transforms = RenderSystem.getDynamicUniforms().writeTransform(new Matrix4f(), modulator, new Vector3f(), new Matrix4f());
         GpuSampler nearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
         try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder()
-                .createRenderPass(() -> "Where Did I Put It? ghosts", main.getColorTextureView(), OptionalInt.empty())) {
+                .createRenderPass(() -> "Where Did I Put It? ghosts", main.getColorTextureView(), Optional.empty())) {
             pass.setPipeline(COMPOSITE);
             RenderSystem.bindDefaultUniforms(pass);
             pass.setUniform("DynamicTransforms", transforms);
             pass.bindTexture("GhostSampler", ghostTarget.getColorTextureView(), nearest);
             pass.bindTexture("GhostDepthSampler", ghostTarget.getDepthTextureView(), nearest);
             pass.bindTexture("DepthSampler", main.getDepthTextureView(), nearest);
-            pass.draw(0, 3);
+            pass.draw(3, 1, 0, 0);
         }
     }
 
     // The ghosts' own target, as large as the screen's.
     private static TextureTarget target(RenderTarget main) {
         if (target == null) {
-            target = new TextureTarget("Where Did I Put It? ghosts", main.width, main.height, true);
+            target = new TextureTarget("Where Did I Put It? ghosts", main.width, main.height, true, GpuFormat.RGBA8_UNORM);
         } else if (target.width != main.width || target.height != main.height) {
             target.resize(main.width, main.height);
         }
