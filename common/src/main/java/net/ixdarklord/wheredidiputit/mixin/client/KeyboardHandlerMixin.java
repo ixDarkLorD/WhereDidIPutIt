@@ -6,7 +6,6 @@ import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.input.KeyEvent;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -26,10 +25,10 @@ public abstract class KeyboardHandlerMixin {
     private Minecraft minecraft;
 
     @Inject(method = "keyPress", at = @At("HEAD"), cancellable = true)
-    private void wheredidiputit$onKeyPress(long handle, int action, KeyEvent event, CallbackInfo ci) {
+    private void wheredidiputit$onKeyPress(long handle, int keyCode, int scanCode, int action, int modifiers, CallbackInfo ci) {
         Screen screen = this.minecraft.screen;
         if (action != GLFW.GLFW_PRESS || screen == null || screen instanceof AbstractContainerScreen<?>) return;
-        if (handle != this.minecraft.getWindow().handle()) return;
-        if (FindKey.onKeyPressed(event, HoveredStacks.fromViewers(screen))) ci.cancel();
+        if (handle != this.minecraft.getWindow().getWindow()) return;
+        if (FindKey.onKeyPressed(keyCode, scanCode, HoveredStacks.fromViewers(screen))) ci.cancel();
     }
 }

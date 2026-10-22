@@ -10,7 +10,7 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
@@ -39,7 +39,7 @@ import java.util.UUID;
  * @param entity  for a container that is an entity (a chest boat, a minecart with a chest, a donkey with one), its UUID;
  *                then {@code pos} is where it was last seen and {@code block} its entity type's id
  */
-public record ContainerRecord(BlockPos pos, Identifier block, @Nullable Component label, long seenAt, List<StoredItem> items, boolean network,
+public record ContainerRecord(BlockPos pos, ResourceLocation block, @Nullable Component label, long seenAt, List<StoredItem> items, boolean network,
                               boolean ignored, int slots, @Nullable UUID entity) {
     /** What it is remembered under: its UUID for an entity, else its position. */
     public Object key() {
@@ -85,25 +85,29 @@ public record ContainerRecord(BlockPos pos, Identifier block, @Nullable Componen
      * @param format the file's format: 1 kept plain stacks with their counts, 2 an item and a count per entry
      */
     public static Optional<ContainerRecord> load(CompoundTag tag, RegistryOps<Tag> ops, int format) {
-        int[] pos = tag.getIntArray("Pos").orElse(null);
-        Identifier block = Identifier.tryParse(tag.getStringOr("Block", ""));
-        if (pos == null || pos.length != 3 || block == null) {
+        int[] pos = tag.getIntArray("Pos");
+        ResourceLocation block = ResourceLocation.tryParse(tag.getString("Block"));
+        if (pos.length != 3 || block == null) {
             WhereDidIPutIt.LOGGER.warn("Skipping a broken container record: {}", tag);
             return Optional.empty();
         }
         Component label = tag.get("Label") instanceof Tag labelTag ? ComponentSerialization.CODEC.parse(ops, labelTag).result().orElse(null) : null;
         List<StoredItem> items = new ArrayList<>();
-        for (Tag item : tag.getListOrEmpty("Items")) {
+        for (Tag item : tag.getList("Items", Tag.TAG_COMPOUND)) {
             if (format < 2) {
                 ItemStack.CODEC.parse(ops, item).ifSuccess(stack -> items.add(StoredItem.of(stack)));
             } else if (item instanceof CompoundTag entry && entry.get("Item") instanceof Tag stack) {
-                long count = entry.getLongOr("Count", 1L);
+                long count = entry.contains("Count") ? entry.getLong("Count") : 1L;
                 ItemStack.CODEC.parse(ops, stack).ifSuccess(parsed -> items.add(new StoredItem(parsed, count)));
             }
         }
-        return Optional.of(new ContainerRecord(new BlockPos(pos[0], pos[1], pos[2]), block, label, tag.getLongOr("SeenAt", 0L), List.copyOf(items),
-                tag.getBooleanOr("Network", false), tag.getBooleanOr("Ignored", false), tag.getIntOr("Slots", 0),
-                tag.getIntArray("Entity").filter(uuid -> uuid.length == 4).map(UUIDUtil::uuidFromIntArray).orElse(null)));
+        return Optional.of(new ContainerRecord(new BlockPos(pos[0], pos[1], pos[2]), block, label, tag.getLong("SeenAt"), List.copyOf(items),
+                tag.getBoolean("Network"), tag.getBoolean("Ignored"), tag.getInt("Slots"), entity(tag.getIntArray("Entity"))));
+    }
+
+    // An entity's UUID as saved, four ints; null for a block (none saved).
+    private static @Nullable UUID entity(int[] uuid) {
+        return uuid.length == 4 ? UUIDUtil.uuidFromIntArray(uuid) : null;
     }
 
     /** The ops records are written with: NBT, resolving item and component ids against the connection's registries. */

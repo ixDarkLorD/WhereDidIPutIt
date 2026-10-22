@@ -127,9 +127,11 @@ public final class DimensionMemory {
 
     public static DimensionMemory load(CompoundTag tag, RegistryOps<Tag> ops) {
         DimensionMemory memory = new DimensionMemory();
-        int format = tag.getIntOr("Format", 1);
-        tag.getListOrEmpty("Containers").compoundStream()
-                .forEach(container -> ContainerRecord.load(container, ops, format).ifPresent(memory::store));
+        int format = tag.contains("Format") ? tag.getInt("Format") : 1;
+        ListTag containers = tag.getList("Containers", Tag.TAG_COMPOUND);
+        for (int i = 0; i < containers.size(); i++) {
+            ContainerRecord.load(containers.getCompound(i), ops, format).ifPresent(memory::store);
+        }
         return memory;
     }
 }

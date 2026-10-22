@@ -7,6 +7,7 @@ import net.ixdarklord.coolcatcanvas.api.client.vfx.WorldVfx;
 import net.ixdarklord.coolcatcore.api.event.v2.client.ClientPlayerEvents;
 import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
+import net.ixdarklord.wheredidiputit.memory.ContainerWatcher;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -14,9 +15,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.util.ARGB;
+import net.minecraft.util.FastColor.ARGB32;
 import net.minecraft.util.Mth;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -92,7 +93,7 @@ public final class ContainerHighlight {
         for (Found container : found) {
             if (container.entity() != null) {
                 // An entity has no block to draw a ghost of: its outline is its box, where it is now if it is loaded.
-                Entity entity = level.getEntity(container.entity());
+                Entity entity = ContainerWatcher.entity(level, container.entity());
                 AABB box = entity != null ? entity.getBoundingBox() : new AABB(container.pos());
                 shown.add(new Target(level.dimension(), container.pos(), box.inflate(INFLATE), null, container.item().copyWithCount(1),
                         container.count(), container.seenAt(), container.entity(), now, end));
@@ -163,7 +164,7 @@ public final class ContainerHighlight {
         // A slow breath, so it catches the eye.
         float breath = 0.85F + 0.15F * Mth.sin(frame.time() * 5.0F);
         int rgb = WDIPIClientConfig.HIGHLIGHT_COLOR.get() & 0xFFFFFF;
-        int ghostRgb = ARGB.srgbLerp(GHOST_TINT, 0xFFFFFFFF, 0xFF000000 | rgb) & 0xFFFFFF;
+        int ghostRgb = ARGB32.lerp(GHOST_TINT, 0xFFFFFFFF, 0xFF000000 | rgb) & 0xFFFFFF;
         Vec3 camera = frame.cameraPosition();
         VfxDraw lines = frame.draw(LINE);
         VfxDraw dots = frame.draw(DOT);
@@ -173,10 +174,10 @@ public final class ContainerHighlight {
         for (Target target : current) {
             if (target.ghost != null) ghosts.add(target.ghost);
         }
-        ContainerGhost.draw(ghosts, ARGB.color(Math.round(current.getFirst().alpha(now) * GHOST_ALPHA * 255.0F), ghostRgb));
+        ContainerGhost.draw(ghosts, ARGB32.color(Math.round(current.getFirst().alpha(now) * GHOST_ALPHA * 255.0F), ghostRgb));
         for (Target target : current) {
             float alpha = target.alpha(now);
-            drawOutline(lines, dots, camera, target.box, ARGB.color(Math.round(alpha * breath * 255.0F), rgb));
+            drawOutline(lines, dots, camera, target.box, ARGB32.color(Math.round(alpha * breath * 255.0F), rgb));
         }
     }
 

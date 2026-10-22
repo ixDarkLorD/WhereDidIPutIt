@@ -1,6 +1,12 @@
 # Changelog
 This file is for listing all the changes to this project
 
+## v1.21.1-1 Release | Unreleased
+### 🛠️ Changes
+- Ported to Minecraft 1.21.1 (Forge, Fabric and NeoForge), with every feature of v26.1.2-1.
+- Forge is new: everything works there except the storage mods, none of which has a Forge build for 1.21.1, and REI, which has none either (JEI works).
+- Recipe viewers and storage mods use their 1.21.1 builds: JEI, REI (Fabric and NeoForge), Applied Energistics 2 and Simple Storage Network (NeoForge), Refined Storage and Tom's Simple Storage (Fabric and NeoForge).
+
 ## v26.1.2-1 Release | Unreleased
 ### ✨ New Features
 - The mod has a logo in the mods list.

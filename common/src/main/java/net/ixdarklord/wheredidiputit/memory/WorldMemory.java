@@ -11,7 +11,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
@@ -171,7 +171,7 @@ public final class WorldMemory {
     }
 
     private Path file(ResourceKey<Level> dimension) {
-        Identifier id = dimension.identifier();
+        ResourceLocation id = dimension.location();
         return this.folder.resolve(sanitize(id.getNamespace())).resolve(sanitize(id.getPath()) + ".dat");
     }
 

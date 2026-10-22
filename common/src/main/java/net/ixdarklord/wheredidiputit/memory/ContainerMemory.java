@@ -112,7 +112,7 @@ public final class ContainerMemory {
     // An entity's record follows it while it is loaded, and goes when a donkey or llama no longer carries a chest. One
     // out of sight keeps its last place: the client can't tell an entity that left from one that died.
     private static void checkEntity(ClientLevel level, ContainerRecord record, List<ContainerRecord> gone, List<ContainerRecord> moved) {
-        Entity entity = level.getEntity(record.entity());
+        Entity entity = ContainerWatcher.entity(level, record.entity());
         if (entity == null) return;
         if (!ContainerWatcher.isContainer(entity)) {
             gone.add(record);

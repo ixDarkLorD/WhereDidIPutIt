@@ -3,7 +3,7 @@ package net.ixdarklord.wheredidiputit.network;
 import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
@@ -39,6 +39,6 @@ public record FindResultPayload(int requestId, Status status, int radius, List<H
      * @param count how many of the matching item it holds
      * @param shown the matching item it holds most of, a stack of one
      */
-    public record Hit(BlockPos pos, Identifier block, long count, ItemStack shown) {
+    public record Hit(BlockPos pos, ResourceLocation block, long count, ItemStack shown) {
     }
 }

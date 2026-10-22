@@ -7,7 +7,7 @@ import net.ixdarklord.wheredidiputit.network.SharedContainer;
 import net.ixdarklord.wheredidiputit.network.ShareContainerPayload;
 import net.ixdarklord.wheredidiputit.network.SharedContainerPayload;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 
@@ -49,7 +49,7 @@ public final class TeamSharingServer {
         // The server's clock, not the client's: a share can't claim to be newer than it is.
         SharedContainer stamped = new SharedContainer(container.dimension(), container.pos(), container.block(), container.label(), System.currentTimeMillis(),
                 container.items(), container.slots(), container.entity());
-        SharedContainerPayload shared = new SharedContainerPayload(player.getGameProfile().name(), stamped);
+        SharedContainerPayload shared = new SharedContainerPayload(player.getGameProfile().getName(), stamped);
         for (ServerPlayer other : player.level().getServer().getPlayerList().getPlayers()) {
             if (other != player && other.getTeam() == team && Network.canPlayerReceive(other, SharedContainerPayload.TYPE)) {
                 Network.sendToPlayer(other, shared);

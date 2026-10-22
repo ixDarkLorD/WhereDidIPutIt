@@ -13,7 +13,7 @@ import net.ixdarklord.wheredidiputit.memory.DimensionMemory;
 import net.ixdarklord.wheredidiputit.memory.StoredItem;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
@@ -45,7 +45,7 @@ public final class ContentsPreview {
         ClientGuiEvents.RENDER_HUD.register(ContentsPreview::render);
     }
 
-    private static void render(GuiGraphicsExtractor graphics, DeltaTracker delta) {
+    private static void render(GuiGraphics graphics, DeltaTracker delta) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.options.hideGui || !KEY.isHeld()) return;
         DimensionMemory memory = ContainerMemory.dimension(minecraft.level.dimension());
@@ -70,7 +70,7 @@ public final class ContentsPreview {
         draw(graphics, minecraft, record, nearest.item(), Math.round(nearestOn.x()) + 26, Math.round(nearestOn.y()) - 8);
     }
 
-    private static void draw(GuiGraphicsExtractor graphics, Minecraft minecraft, ContainerRecord record, ItemStack found, int x, int y) {
+    private static void draw(GuiGraphics graphics, Minecraft minecraft, ContainerRecord record, ItemStack found, int x, int y) {
         List<StoredItem> items = record.items();
         int shown = Math.min(items.size(), COLUMNS * MAX_ROWS);
         int columns = Math.max(1, Math.min(COLUMNS, shown));
@@ -81,19 +81,19 @@ public final class ContentsPreview {
         if (x + width > graphics.guiWidth()) x -= width + 52;
         y = Math.max(2, Math.min(y, graphics.guiHeight() - height - 2));
         graphics.fill(x, y, x + width, y + height, PANEL_COLOR);
-        graphics.outline(x, y, width, height, BORDER_COLOR);
+        graphics.renderOutline(x, y, width, height, BORDER_COLOR);
         int frame = 0xFF000000 | WDIPIClientConfig.HIGHLIGHT_COLOR.get();
         for (int i = 0; i < shown; i++) {
             StoredItem item = items.get(i);
             int slotX = x + PADDING + (i % COLUMNS) * SLOT;
             int slotY = y + PADDING + (i / COLUMNS) * SLOT;
-            graphics.item(item.stack(), slotX + 1, slotY + 1);
-            graphics.itemDecorations(minecraft.font, item.stack(), slotX + 1, slotY + 1, ItemMarker.count(item.count()));
-            if (ItemStack.isSameItem(item.stack(), found)) graphics.outline(slotX, slotY, SLOT, SLOT, frame);
+            graphics.renderItem(item.stack(), slotX + 1, slotY + 1);
+            graphics.renderItemDecorations(minecraft.font, item.stack(), slotX + 1, slotY + 1, ItemMarker.count(item.count()));
+            if (ItemStack.isSameItem(item.stack(), found)) graphics.renderOutline(slotX, slotY, SLOT, SLOT, frame);
         }
-        if (items.isEmpty()) graphics.text(minecraft.font, Component.translatable("gui.wheredidiputit.browser.empty_container"), x + PADDING, y + PADDING + 4, TEXT_COLOR);
+        if (items.isEmpty()) graphics.drawString(minecraft.font, Component.translatable("gui.wheredidiputit.browser.empty_container"), x + PADDING, y + PADDING + 4, TEXT_COLOR);
         if (items.size() > shown) {
-            graphics.text(minecraft.font, Component.translatable("gui.wheredidiputit.preview.more", items.size() - shown), x + PADDING, y + height - 10, TEXT_COLOR);
+            graphics.drawString(minecraft.font, Component.translatable("gui.wheredidiputit.preview.more", items.size() - shown), x + PADDING, y + height - 10, TEXT_COLOR);
         }
     }
 }

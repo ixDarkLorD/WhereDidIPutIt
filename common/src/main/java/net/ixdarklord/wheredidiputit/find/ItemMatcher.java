@@ -55,9 +55,9 @@ public final class ItemMatcher {
             case IGNORE_DATA -> stack -> stack.getItem() == copy.getItem();
             case ITEM_TAG -> {
                 List<Pattern> ignored = ignoredTags.stream().map(ItemMatcher::pattern).toList();
-                List<TagKey<Item>> tags = copy.typeHolder().tags().filter(tag -> !ignored(tag, ignored)).toList();
+                List<TagKey<Item>> tags = copy.getTags().filter(tag -> !ignored(tag, ignored)).toList();
                 // An item in no tag left has nothing to share: fall back to the item itself.
-                yield stack -> stack.getItem() == copy.getItem() || tags.stream().anyMatch(stack.typeHolder()::is);
+                yield stack -> stack.getItem() == copy.getItem() || tags.stream().anyMatch(stack::is);
             }
             case SIMILAR -> similar(copy);
         };
@@ -112,7 +112,7 @@ public final class ItemMatcher {
         if (depth >= MAX_DEPTH) return ItemStack.EMPTY;
         ItemContainerContents container = stack.get(DataComponents.CONTAINER);
         BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
-        List<ItemStack> inside = container != null ? container.nonEmptyItemCopyStream().toList() : bundle != null ? bundle.itemCopyStream().toList() : List.of();
+        List<ItemStack> inside = container != null ? container.nonEmptyStream().toList() : bundle != null ? bundle.itemCopyStream().toList() : List.of();
         for (ItemStack inner : inside) {
             if (this.test.test(inner)) return inner.copyWithCount(1);
             ItemStack deeper = this.firstInside(inner, depth + 1);
@@ -147,7 +147,7 @@ public final class ItemMatcher {
         if (!this.nested || depth >= MAX_DEPTH) return count;
         ItemContainerContents container = stack.get(DataComponents.CONTAINER);
         if (container != null) {
-            count += container.nonEmptyItemCopyStream().mapToLong(inner -> this.count(inner, depth + 1) * inner.getCount()).sum();
+            count += container.nonEmptyStream().mapToLong(inner -> this.count(inner, depth + 1) * inner.getCount()).sum();
         }
         BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
         if (bundle != null) {

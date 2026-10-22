@@ -1,11 +1,11 @@
 package net.ixdarklord.wheredidiputit.find;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.ARGB;
+import net.minecraft.util.FastColor.ARGB32;
 import net.minecraft.util.Mth;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -28,12 +28,14 @@ public final class ScreenNotice {
     }
 
     /** Draws the notice centred on {@code centerX}, just above {@code panelTop}, while it lasts. */
-    public static void extract(GuiGraphicsExtractor graphics, int centerX, int panelTop) {
+    public static void render(GuiGraphics graphics, int centerX, int panelTop) {
         Component current = text;
         long left = until - Util.getMillis();
         if (current == null || left <= 0) return;
-        float alpha = Mth.clamp(left / (float) FADE_MILLIS, 0.0F, 1.0F);
+        int alpha = Math.round(Mth.clamp(left / (float) FADE_MILLIS, 0.0F, 1.0F) * 255.0F);
+        // 1.21.1's font draws text with an alpha under 4 fully opaque: the last moments of the fade are skipped.
+        if (alpha < 4) return;
         int y = Math.max(2, panelTop - 12);
-        graphics.centeredText(Minecraft.getInstance().font, current, centerX, y, ARGB.color(Math.round(alpha * 255.0F), 0xFFFFFF));
+        graphics.drawCenteredString(Minecraft.getInstance().font, current, centerX, y, ARGB32.color(alpha, 0xFFFFFF));
     }
 }

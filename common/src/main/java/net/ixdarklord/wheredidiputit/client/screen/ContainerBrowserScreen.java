@@ -9,10 +9,10 @@ import net.ixdarklord.wheredidiputit.memory.ContainerRecord;
 import net.ixdarklord.wheredidiputit.memory.DimensionMemory;
 import net.ixdarklord.wheredidiputit.memory.StoredItem;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.Util;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -45,6 +45,8 @@ public final class ContainerBrowserScreen extends Screen {
     private static final int SLOT = 18;
     /** How many of a container's items its row shows, small, on its right. */
     private static final int PREVIEW_ITEMS = 3;
+    /** Two clicks on a row this close together are a double click (1.21.1's screens don't tell). */
+    private static final long DOUBLE_CLICK_MILLIS = 250L;
 
     /** How the list is ordered; the choice is kept while the game runs. */
     private enum Sort {
@@ -67,6 +69,8 @@ public final class ContainerBrowserScreen extends Screen {
     private @Nullable BlockPos selected;
     private @Nullable UUID selectedEntity;
     private int listScroll;
+    private int lastClickedRow = -1;
+    private long lastClickAt;
     private int gridScroll;
     private int left;
     private int top;
@@ -199,11 +203,11 @@ public final class ContainerBrowserScreen extends Screen {
     private static ItemStack icon(ContainerRecord record) {
         if (record.entity() != null) {
             // Chest boats and minecarts share their entity's id with their item; animals show their spawn egg.
-            ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.getValue(record.block()));
-            if (stack.isEmpty()) stack = new ItemStack(BuiltInRegistries.ITEM.getValue(record.block().withSuffix("_spawn_egg")));
+            ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(record.block()));
+            if (stack.isEmpty()) stack = new ItemStack(BuiltInRegistries.ITEM.get(record.block().withSuffix("_spawn_egg")));
             return stack.isEmpty() ? new ItemStack(Items.CHEST) : stack;
         }
-        ItemStack stack = new ItemStack(BuiltInRegistries.BLOCK.getValue(record.block()).asItem());
+        ItemStack stack = new ItemStack(BuiltInRegistries.BLOCK.get(record.block()).asItem());
         return stack.isEmpty() ? new ItemStack(Items.CHEST) : stack;
     }
 
@@ -227,23 +231,29 @@ public final class ContainerBrowserScreen extends Screen {
         return PANEL_WIDTH - (this.detailLeft() - this.left) - PADDING;
     }
 
+    // The panel goes with the background, under the widgets the screen draws over it.
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.renderBackground(graphics, mouseX, mouseY, partialTick);
         ScreenStyle.panel(graphics, this.left, this.top, PANEL_WIDTH, PANEL_HEIGHT);
         int total = this.memory != null ? this.memory.records().size() : 0;
         ScreenStyle.header(graphics, this.font, this.left, this.top, PANEL_WIDTH, this.title, Component.translatable("gui.wheredidiputit.browser.count", total));
         ScreenStyle.field(graphics, this.listLeft(), this.top + 31, LIST_WIDTH - 58, 16, this.search.isFocused());
         // The divider between the list and the picked container.
         graphics.fill(this.detailLeft() - 7, this.top + ScreenStyle.HEADER_HEIGHT + 8, this.detailLeft() - 6, this.top + PANEL_HEIGHT - PADDING, 0xFF2A313B);
-        super.extractRenderState(graphics, mouseX, mouseY, a);
-        this.extractList(graphics, mouseX, mouseY);
-        this.extractDetail(graphics, mouseX, mouseY);
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.render(graphics, mouseX, mouseY, partialTick);
+        this.renderList(graphics, mouseX, mouseY);
+        this.renderDetail(graphics, mouseX, mouseY);
         // Centred under the list it is about.
         ScreenStyle.hints(graphics, this.font, this.listLeft() + (LIST_WIDTH - 4) / 2, this.top + PANEL_HEIGHT - PADDING - 12,
                 Component.translatable("gui.wheredidiputit.browser.hint_key"), Component.translatable("gui.wheredidiputit.browser.hint_action"));
     }
 
-    private void extractList(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+    private void renderList(GuiGraphics graphics, int mouseX, int mouseY) {
         int x = this.listLeft();
         int width = LIST_WIDTH - 4;
         int hovered = this.rowAt(mouseX, mouseY);
@@ -256,15 +266,15 @@ public final class ContainerBrowserScreen extends Screen {
             boolean picked = this.isSelected(record);
             ScreenStyle.rounded(graphics, x, y, width, ROW_HEIGHT - 2, picked ? ScreenStyle.ROW_SELECTED : index == hovered ? ScreenStyle.ROW_HOVER : ScreenStyle.ROW);
             if (picked) graphics.fill(x, y + 2, x + 2, y + ROW_HEIGHT - 4, ScreenStyle.accent());
-            graphics.item(icon(record), x + 4, y + 1);
+            graphics.renderItem(icon(record), x + 4, y + 1);
 
             int textLeft = x + 24;
             int previewWidth = record.ignored() ? 0 : Math.min(PREVIEW_ITEMS, record.items().size()) * 9;
             Component name = FindMessages.name(record);
             int nameRoom = width - (textLeft - x) - (record.ignored() ? 50 : previewWidth + 4);
-            graphics.text(this.font, this.font.plainSubstrByWidth(name.getString(), nameRoom), textLeft, y + 2, record.ignored() ? ScreenStyle.MUTED : ScreenStyle.TEXT, false);
+            graphics.drawString(this.font, this.font.plainSubstrByWidth(name.getString(), nameRoom), textLeft, y + 2, record.ignored() ? ScreenStyle.MUTED : ScreenStyle.TEXT, false);
             int distance = Mth.floor(Vec3.atCenterOf(record.pos()).distanceTo(from));
-            graphics.text(this.font, Component.translatable("gui.wheredidiputit.browser.row", distance, age(record)), textLeft, y + 11, ScreenStyle.FAINT, false);
+            graphics.drawString(this.font, Component.translatable("gui.wheredidiputit.browser.row", distance, age(record)), textLeft, y + 11, ScreenStyle.FAINT, false);
 
             if (record.ignored()) {
                 Component skipped = Component.translatable("gui.wheredidiputit.browser.skipped");
@@ -272,38 +282,38 @@ public final class ContainerBrowserScreen extends Screen {
             } else {
                 // A glimpse of what it holds: its first few items, half size.
                 for (int i = 0; i < Math.min(PREVIEW_ITEMS, record.items().size()); i++) {
-                    graphics.pose().pushMatrix();
-                    graphics.pose().translate(x + width - previewWidth - 2 + i * 9, y + 5);
-                    graphics.pose().scale(0.5F, 0.5F);
-                    graphics.item(record.items().get(i).stack(), 0, 0);
-                    graphics.pose().popMatrix();
+                    graphics.pose().pushPose();
+                    graphics.pose().translate(x + width - previewWidth - 2 + i * 9, y + 5, 0.0F);
+                    graphics.pose().scale(0.5F, 0.5F, 1.0F);
+                    graphics.renderItem(record.items().get(i).stack(), 0, 0);
+                    graphics.pose().popPose();
                 }
             }
         }
         if (this.shown.isEmpty()) {
             Component empty = Component.translatable(this.memory == null || this.memory.records().isEmpty() ? "gui.wheredidiputit.search.nothing" : "gui.wheredidiputit.browser.empty");
-            graphics.centeredText(this.font, empty, x + width / 2, this.listTop() + LIST_ROWS * ROW_HEIGHT / 2 - 4, ScreenStyle.MUTED);
+            graphics.drawCenteredString(this.font, empty, x + width / 2, this.listTop() + LIST_ROWS * ROW_HEIGHT / 2 - 4, ScreenStyle.MUTED);
         }
         ScreenStyle.scrollbar(graphics, x + LIST_WIDTH - 2, this.listTop(), LIST_ROWS * ROW_HEIGHT - 2, this.listScroll, LIST_ROWS, this.shown.size());
     }
 
-    private void extractDetail(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+    private void renderDetail(GuiGraphics graphics, int mouseX, int mouseY) {
         ContainerRecord record = this.selected();
         int x = this.detailLeft();
         int y = this.top + 31;
         if (record == null) {
             int middle = x + this.detailWidth() / 2;
             int center = this.top + PANEL_HEIGHT / 2 - 8;
-            graphics.centeredText(this.font, Component.translatable("gui.wheredidiputit.browser.pick"), middle, center, ScreenStyle.MUTED);
-            graphics.centeredText(this.font, Component.translatable("gui.wheredidiputit.browser.pick_more"), middle, center + 11, ScreenStyle.FAINT);
+            graphics.drawCenteredString(this.font, Component.translatable("gui.wheredidiputit.browser.pick"), middle, center, ScreenStyle.MUTED);
+            graphics.drawCenteredString(this.font, Component.translatable("gui.wheredidiputit.browser.pick_more"), middle, center + 11, ScreenStyle.FAINT);
             return;
         }
         ScreenStyle.slot(graphics, x, y);
-        graphics.item(icon(record), x + 1, y + 1);
+        graphics.renderItem(icon(record), x + 1, y + 1);
         int textLeft = x + 24;
-        graphics.text(this.font, this.font.plainSubstrByWidth(FindMessages.name(record).getString(), this.detailWidth() - 24), textLeft, y + 1, ScreenStyle.TEXT, false);
+        graphics.drawString(this.font, this.font.plainSubstrByWidth(FindMessages.name(record).getString(), this.detailWidth() - 24), textLeft, y + 1, ScreenStyle.TEXT, false);
         BlockPos pos = record.pos();
-        graphics.text(this.font, Component.translatable("gui.wheredidiputit.browser.position", pos.getX(), pos.getY(), pos.getZ()), textLeft, y + 10, ScreenStyle.MUTED, false);
+        graphics.drawString(this.font, Component.translatable("gui.wheredidiputit.browser.position", pos.getX(), pos.getY(), pos.getZ()), textLeft, y + 10, ScreenStyle.MUTED, false);
 
         int badgeX = x;
         int badgeY = y + 23;
@@ -316,9 +326,9 @@ public final class ContainerBrowserScreen extends Screen {
         if (kind != null) ScreenStyle.badge(graphics, this.font, kind, badgeX, badgeY, ScreenStyle.tint(0xFF262D37, 0.25F), ScreenStyle.TEXT);
 
         int gridTop = y + 40;
-        graphics.text(this.font, Component.translatable("gui.wheredidiputit.browser.contents"), x, gridTop, ScreenStyle.TEXT, false);
+        graphics.drawString(this.font, Component.translatable("gui.wheredidiputit.browser.contents"), x, gridTop, ScreenStyle.TEXT, false);
         Component stacks = Component.translatable("gui.wheredidiputit.browser.stacks", record.items().size());
-        graphics.text(this.font, stacks, x + this.detailWidth() - this.font.width(stacks), gridTop, ScreenStyle.FAINT, false);
+        graphics.drawString(this.font, stacks, x + this.detailWidth() - this.font.width(stacks), gridTop, ScreenStyle.FAINT, false);
         gridTop += 11;
         StoredItem hoveredItem = null;
         for (int row = 0; row < GRID_ROWS; row++) {
@@ -329,8 +339,8 @@ public final class ContainerBrowserScreen extends Screen {
                 int index = (this.gridScroll + row) * COLUMNS + column;
                 if (index >= record.items().size()) continue;
                 StoredItem item = record.items().get(index);
-                graphics.item(item.stack(), slotX + 1, slotY + 1);
-                graphics.itemDecorations(this.font, item.stack(), slotX + 1, slotY + 1, ItemMarker.count(item.count()));
+                graphics.renderItem(item.stack(), slotX + 1, slotY + 1);
+                graphics.renderItemDecorations(this.font, item.stack(), slotX + 1, slotY + 1, ItemMarker.count(item.count()));
                 if (mouseX >= slotX && mouseX < slotX + SLOT && mouseY >= slotY && mouseY < slotY + SLOT) {
                     ScreenStyle.slotHover(graphics, slotX, slotY);
                     hoveredItem = item;
@@ -340,9 +350,9 @@ public final class ContainerBrowserScreen extends Screen {
         int rows = (record.items().size() + COLUMNS - 1) / COLUMNS;
         ScreenStyle.scrollbar(graphics, x + COLUMNS * SLOT + 1, gridTop, GRID_ROWS * SLOT, this.gridScroll, GRID_ROWS, rows);
         if (record.items().isEmpty()) {
-            graphics.centeredText(this.font, Component.translatable("gui.wheredidiputit.browser.empty_container"), x + COLUMNS * SLOT / 2, gridTop + 2 * SLOT + 5, ScreenStyle.MUTED);
+            graphics.drawCenteredString(this.font, Component.translatable("gui.wheredidiputit.browser.empty_container"), x + COLUMNS * SLOT / 2, gridTop + 2 * SLOT + 5, ScreenStyle.MUTED);
         }
-        if (hoveredItem != null) graphics.setTooltipForNextFrame(this.font, hoveredItem.stack(), mouseX, mouseY);
+        if (hoveredItem != null) graphics.renderTooltip(this.font, hoveredItem.stack(), mouseX, mouseY);
     }
 
     private static Component age(ContainerRecord record) {
@@ -361,9 +371,13 @@ public final class ContainerBrowserScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        int index = this.rowAt(event.x(), event.y());
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        int index = this.rowAt(mouseX, mouseY);
         if (index >= 0) {
+            long now = Util.getMillis();
+            boolean doubleClick = index == this.lastClickedRow && now - this.lastClickAt <= DOUBLE_CLICK_MILLIS;
+            this.lastClickedRow = index;
+            this.lastClickAt = now;
             ContainerRecord picked = this.shown.get(index);
             this.selected = picked.pos();
             this.selectedEntity = picked.entity();
@@ -371,7 +385,7 @@ public final class ContainerBrowserScreen extends Screen {
             if (doubleClick) this.showSelected();
             return true;
         }
-        return super.mouseClicked(event, doubleClick);
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override

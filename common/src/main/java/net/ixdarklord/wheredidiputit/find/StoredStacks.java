@@ -68,7 +68,7 @@ public final class StoredStacks {
         here.add(tally);
         if (!nested || depth >= MAX_DEPTH) return;
         ItemContainerContents container = stack.get(DataComponents.CONTAINER);
-        if (container != null) container.nonEmptyItemCopyStream().forEach(inner -> add(byItem, here, inner, inner.getCount() * count, true, depth + 1));
+        if (container != null) container.nonEmptyStream().forEach(inner -> add(byItem, here, inner, inner.getCount() * count, true, depth + 1));
         BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
         if (bundle != null) bundle.itemCopyStream().forEach(inner -> add(byItem, here, inner, inner.getCount() * count, true, depth + 1));
     }
@@ -82,7 +82,7 @@ public final class StoredStacks {
         if (text.isEmpty()) return true;
         if (text.startsWith("#")) {
             String tag = text.substring(1);
-            return stack.typeHolder().tags().anyMatch(key -> key.location().toString().contains(tag));
+            return stack.getTags().anyMatch(key -> key.location().toString().contains(tag));
         }
         if (text.startsWith("@")) return BuiltInRegistries.ITEM.getKey(stack.getItem()).getNamespace().contains(text.substring(1));
         return stack.getHoverName().getString().toLowerCase(Locale.ROOT).contains(text)

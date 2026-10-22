@@ -1,8 +1,9 @@
 package net.ixdarklord.wheredidiputit.client.hud;
 
+import net.ixdarklord.wheredidiputit.mixin.client.GameRendererAccessor;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3fc;
@@ -17,18 +18,19 @@ import org.joml.Vector3fc;
  * @param angle  the angle round the crosshair towards it, in radians (screen y grows down)
  */
 public record ScreenProjection(boolean inView, float x, float y, float angle) {
-    public static ScreenProjection of(Minecraft minecraft, GuiGraphicsExtractor graphics, Vec3 point) {
+    public static ScreenProjection of(Minecraft minecraft, GuiGraphics graphics, Vec3 point) {
         Camera camera = minecraft.gameRenderer.getMainCamera();
-        Vec3 to = point.subtract(camera.position());
-        Vector3fc forward = camera.forwardVector();
-        Vector3fc up = camera.upVector();
-        Vector3fc left = camera.leftVector();
+        Vec3 to = point.subtract(camera.getPosition());
+        Vector3fc forward = camera.getLookVector();
+        Vector3fc up = camera.getUpVector();
+        Vector3fc left = camera.getLeftVector();
         // The point in the camera's own axes: ahead, to the right and up.
         double ahead = to.x * forward.x() + to.y * forward.y() + to.z * forward.z();
         double right = -(to.x * left.x() + to.y * left.y() + to.z * left.z());
         double above = to.x * up.x() + to.y * up.y() + to.z * up.z();
-        // Half the view's angles, as tangents: the vertical one from the FOV, the horizontal one by the window's shape.
-        double tanV = Math.tan(Math.toRadians(camera.getFov()) / 2.0);
+        // Half the view's angles, as tangents: the vertical one from the FOV the world is drawn with (FOV effects too),
+        // the horizontal one by the window's shape.
+        double tanV = Math.tan(Math.toRadians(((GameRendererAccessor) minecraft.gameRenderer).wheredidiputit$getFov(camera, minecraft.getTimer().getGameTimeDeltaPartialTick(true), true)) / 2.0);
         double tanH = tanV * graphics.guiWidth() / graphics.guiHeight();
         boolean inView = ahead > 0.0 && Math.abs(right) <= ahead * tanH && Math.abs(above) <= ahead * tanV;
         float x = 0.0F;

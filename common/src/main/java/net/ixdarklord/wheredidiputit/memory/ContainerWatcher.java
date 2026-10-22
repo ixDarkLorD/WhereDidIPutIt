@@ -4,17 +4,19 @@ import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 import net.ixdarklord.wheredidiputit.client.render.Guidance;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.util.Util;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.Util;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.animal.equine.AbstractChestedHorse;
+import net.minecraft.world.entity.animal.horse.AbstractChestedHorse;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.vehicle.ContainerEntity;
 import net.minecraft.world.inventory.ChestMenu;
@@ -74,6 +76,19 @@ public final class ContainerWatcher {
         usedAt = Util.getMillis();
     }
 
+    /**
+     * The entity with this UUID in the level, or null when it isn't loaded. 1.21.1's client level only looks entities up
+     * by network id, so its entities are gone through.
+     */
+    public static @Nullable Entity entity(Level level, UUID uuid) {
+        if (level instanceof ServerLevel server) return server.getEntity(uuid);
+        if (!(level instanceof ClientLevel client)) return null;
+        for (Entity entity : client.entitiesForRendering()) {
+            if (entity.getUUID().equals(uuid)) return entity;
+        }
+        return null;
+    }
+
     /** Whether an entity holds things of its own: chest boats, minecarts with a chest or hopper, and donkeys, mules and llamas with a chest. */
     public static boolean isContainer(Entity entity) {
         return entity instanceof ContainerEntity || entity instanceof AbstractChestedHorse horse && horse.hasChest();
@@ -110,7 +125,7 @@ public final class ContainerWatcher {
         DimensionMemory memory = ContainerMemory.dimension(minecraft.level.dimension());
         ContainerRecord known;
         if (entity != null) {
-            Entity opened = minecraft.level.getEntity(entity);
+            Entity opened = entity(minecraft.level, entity);
             if (opened == null) return;
             watchedEntity = entity;
             watchedPos = opened.blockPosition();
@@ -141,10 +156,10 @@ public final class ContainerWatcher {
         if (screen == null || pos == null || minecraft.player == null || minecraft.level == null) return;
         if (minecraft.level.dimension() != dimension || !WDIPIClientConfig.ENABLED.get()) return;
 
-        Identifier type;
+        ResourceLocation type;
         if (entity != null) {
             // Gone (killed, broken) while it was open: nothing to remember.
-            Entity opened = minecraft.level.getEntity(entity);
+            Entity opened = entity(minecraft.level, entity);
             if (opened == null || !isContainer(opened)) return;
             pos = opened.blockPosition();
             type = BuiltInRegistries.ENTITY_TYPE.getKey(opened.getType());

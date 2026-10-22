@@ -8,6 +8,7 @@
   "client": [
     "client.AbstractContainerScreenMixin",
     "client.ClientLevelMixin",
+    "client.GameRendererAccessor",
     "client.KeyboardHandlerMixin",
     "client.MultiPlayerGameModeMixin"
   ],

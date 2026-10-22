@@ -8,19 +8,19 @@ import net.ixdarklord.wheredidiputit.config.MatchMode;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
 import net.ixdarklord.wheredidiputit.memory.ContainerMemory;
 import net.ixdarklord.wheredidiputit.memory.ContainerRecord;
+import net.ixdarklord.wheredidiputit.memory.ContainerWatcher;
 import net.ixdarklord.wheredidiputit.memory.DimensionMemory;
 import net.ixdarklord.wheredidiputit.network.FindResultPayload;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
@@ -39,7 +39,8 @@ import java.util.UUID;
  * do nothing, so sharing F with the game's offhand swap only takes that swap away inside screens.
  */
 public final class FindKey {
-    public static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(WhereDidIPutIt.id("main"));
+    /** The keys' category in the controls screen, a translation key (1.21.1 categories are plain names). */
+    public static final String CATEGORY = "key.category." + WhereDidIPutIt.MOD_ID + ".main";
     public static final KeyMapping FIND = new KeyMapping("key.wheredidiputit.find", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F, CATEGORY);
     public static final KeyMapping FIND_ALL = new KeyMapping("key.wheredidiputit.find_all", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, CATEGORY);
     /** Every container holding something like the hovered item ({@link MatchMode#SIMILAR}); unbound by default. */
@@ -69,13 +70,13 @@ public final class FindKey {
      * A key was pressed in a screen with {@code hovered} under the mouse; true when it was a find key and is used up.
      * Called from {@code AbstractContainerScreenMixin} and, for other screens, {@code KeyboardHandlerMixin}.
      */
-    public static boolean onKeyPressed(KeyEvent event, ItemStack hovered) {
+    public static boolean onKeyPressed(int keyCode, int scanCode, ItemStack hovered) {
         if (hovered.isEmpty() || !WDIPIClientConfig.ENABLED.get()) return false;
-        boolean all = FIND_ALL.matches(event);
-        boolean similar = FIND_SIMILAR.matches(event);
-        boolean space = FIND_SPACE.matches(event);
-        boolean ingredients = FIND_INGREDIENTS.matches(event);
-        if (!all && !similar && !space && !ingredients && !FIND.matches(event)) return false;
+        boolean all = FIND_ALL.matches(keyCode, scanCode);
+        boolean similar = FIND_SIMILAR.matches(keyCode, scanCode);
+        boolean space = FIND_SPACE.matches(keyCode, scanCode);
+        boolean ingredients = FIND_INGREDIENTS.matches(keyCode, scanCode);
+        if (!all && !similar && !space && !ingredients && !FIND.matches(keyCode, scanCode)) return false;
         long now = Util.getMillis();
         if (now - lastPress < REPEAT_MILLIS) return true;
         lastPress = now;
@@ -174,7 +175,7 @@ public final class FindKey {
         if (mode == MatchMode.SIMILAR) return;
         List<SearchHistory.Place> places = new ArrayList<>(found.size());
         for (Found hit : found) {
-            Entity entity = hit.entity() != null ? level.getEntity(hit.entity()) : null;
+            Entity entity = hit.entity() != null ? ContainerWatcher.entity(level, hit.entity()) : null;
             Component name = entity != null ? entity.getName() : level.getBlockState(hit.pos()).getBlock().getName();
             places.add(new SearchHistory.Place(hit.pos(), name, hit.count()));
         }

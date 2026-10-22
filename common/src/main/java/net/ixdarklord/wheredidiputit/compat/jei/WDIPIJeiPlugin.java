@@ -6,7 +6,7 @@ import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.runtime.IJeiRuntime;
 import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 import net.ixdarklord.wheredidiputit.find.HoveredStacks;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,7 +20,7 @@ public final class WDIPIJeiPlugin implements IModPlugin {
     private static @Nullable IJeiRuntime runtime;
 
     @Override
-    public Identifier getPluginUid() {
+    public ResourceLocation getPluginUid() {
         return WhereDidIPutIt.id("jei");
     }
 
