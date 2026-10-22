@@ -73,7 +73,7 @@ Check out the branch for your Minecraft version, then run:
 
 It needs the Java its Minecraft version runs on (25 for 26.x, 21 for 1.21.1, 17 for 1.20.1). CoolCatLib comes from the
 ModResources Maven, and the build scripts and dependency versions from
-[ModResources](https://github.com/ixDarkLorD/ModResources); each release is published to its Maven automatically.
+[ModResources](https://github.com/ixDarkLorD/ModResources).
 
 ## 🐞 Issues and ideas
 
