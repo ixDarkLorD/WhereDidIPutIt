@@ -1,0 +1,16 @@
+apply from: "https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/gradle/v4/forge.gradle"
+
+dependencies {
+    // CoolCatLib (Forge). Its common classes are inside this jar.
+    modImplementation "net.ixdarklord.coolcatlib:coolcatlib-forge:${libs.versions.minecraft.get()}-${coolcatlib_version}"
+
+    // Recipe viewers in a dev run only when asked (-Ptest_jei=true, -Ptest_rei=true), to try the find key on their entries.
+    if (project.findProperty("test_jei") == "true") modLocalRuntime libs.jei.forge
+    if (project.findProperty("test_rei") == "true") modLocalRuntime libs.rei.forge
+}
+
+// A dev run straight into a singleplayer world of run/saves when asked (-Ptest_world="<world folder>"), to test without
+// clicking through the menus.
+if (project.findProperty("test_world") != null) {
+    loom.runs.client.programArgs("--quickPlaySingleplayer", project.findProperty("test_world").toString())
+}

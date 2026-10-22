@@ -1,7 +1,7 @@
 package net.ixdarklord.wheredidiputit.network;
 
 import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.ixdarklord.coolcatcore.api.network.CustomPacketPayload;
 
 /**
  * Server to client, on joining: the server has the mod and can answer live searches. Whether it allows them, and how

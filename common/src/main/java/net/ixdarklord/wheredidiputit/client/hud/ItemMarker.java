@@ -3,9 +3,8 @@ package net.ixdarklord.wheredidiputit.client.hud;
 import net.ixdarklord.coolcatcore.api.event.v2.client.ClientGuiEvents;
 import net.ixdarklord.wheredidiputit.client.render.ContainerHighlight;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,7 +25,7 @@ public final class ItemMarker {
         ClientGuiEvents.RENDER_HUD.register(ItemMarker::render);
     }
 
-    private static void render(GuiGraphicsExtractor graphics, DeltaTracker delta) {
+    private static void render(GuiGraphics graphics, float partialTick) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.options.hideGui || !WDIPIClientConfig.ITEM_MARKER.get()) return;
         for (ContainerHighlight.Target target : ContainerHighlight.current(minecraft.level)) {
@@ -35,11 +34,11 @@ public final class ItemMarker {
             int x = Math.round(on.x());
             int y = Math.round(on.y());
             // Drawn as a slot draws it: the amount in the bottom right corner, by the game's own item decorations.
-            graphics.item(target.item(), x - 8, y - 8);
-            graphics.itemDecorations(minecraft.font, target.item(), x - 8, y - 8, count(target.count()));
+            graphics.renderItem(target.item(), x - 8, y - 8);
+            graphics.renderItemDecorations(minecraft.font, target.item(), x - 8, y - 8, count(target.count()));
             if (WDIPIClientConfig.SHOW_AGE.get() && target.seenAt() != ContainerHighlight.LIVE) {
                 Component age = age(System.currentTimeMillis() - target.seenAt());
-                if (age != null) graphics.centeredText(minecraft.font, age, x, y + 10, AGE_COLOR);
+                if (age != null) graphics.drawCenteredString(minecraft.font, age, x, y + 10, AGE_COLOR);
             }
         }
     }

@@ -3,9 +3,9 @@ package net.ixdarklord.wheredidiputit.client.screen;
 import net.ixdarklord.coolcatcanvas.api.client.utils.RenderUtils;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.ARGB;
+import net.ixdarklord.wheredidiputit.util.ARGB;
 import net.minecraft.util.Mth;
 
 /**
@@ -48,23 +48,23 @@ public final class ScreenStyle {
     }
 
     /** The panel: a shadow, a body darkening downwards, a border and a faint shine along the top. */
-    public static void panel(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
+    public static void panel(GuiGraphics graphics, int x, int y, int width, int height) {
         graphics.fill(x + 2, y + 2, x + width + 2, y + height + 2, SHADOW);
         RenderUtils.fillVerticalGradient(graphics, x, y, width, height, PANEL_TOP, PANEL_BOTTOM);
-        graphics.outline(x, y, width, height, BORDER);
+        graphics.renderOutline(x, y, width, height, BORDER);
         graphics.fill(x + 1, y + 1, x + width - 1, y + 2, SHINE);
     }
 
     /** The header strip: the title on the left, a quieter note on the right, and an accent line under both. */
-    public static void header(GuiGraphicsExtractor graphics, Font font, int x, int y, int width, Component title, Component note) {
+    public static void header(GuiGraphics graphics, Font font, int x, int y, int width, Component title, Component note) {
         graphics.fill(x + 1, y + 1, x + width - 1, y + HEADER_HEIGHT, HEADER);
-        graphics.text(font, title, x + 8, y + 8, TEXT, false);
-        graphics.text(font, note, x + width - 8 - font.width(note), y + 8, MUTED, false);
+        graphics.drawString(font, title, x + 8, y + 8, TEXT, false);
+        graphics.drawString(font, note, x + width - 8 - font.width(note), y + 8, MUTED, false);
         RenderUtils.fillHorizontalGradient(graphics, x + 1, y + HEADER_HEIGHT, width - 2, 1, accent(), accent() & 0x00FFFFFF);
     }
 
     /** A slot as the game's look sets one in: darker along the top and left, lighter along the bottom and right. */
-    public static void slot(GuiGraphicsExtractor graphics, int x, int y) {
+    public static void slot(GuiGraphics graphics, int x, int y) {
         graphics.fill(x, y, x + 18, y + 18, SLOT);
         graphics.fill(x, y, x + 18, y + 1, SLOT_DARK);
         graphics.fill(x, y, x + 1, y + 18, SLOT_DARK);
@@ -73,33 +73,33 @@ public final class ScreenStyle {
     }
 
     /** A slot under the mouse: a light wash over what it holds. */
-    public static void slotHover(GuiGraphicsExtractor graphics, int x, int y) {
+    public static void slotHover(GuiGraphics graphics, int x, int y) {
         graphics.fill(x + 1, y + 1, x + 17, y + 17, 0x50FFFFFF);
     }
 
     /** A rectangle with its corners cut by a pixel, which reads as rounded at the GUI's scale. */
-    public static void rounded(GuiGraphicsExtractor graphics, int x, int y, int width, int height, int color) {
+    public static void rounded(GuiGraphics graphics, int x, int y, int width, int height, int color) {
         graphics.fill(x + 1, y, x + width - 1, y + height, color);
         graphics.fill(x, y + 1, x + 1, y + height - 1, color);
         graphics.fill(x + width - 1, y + 1, x + width, y + height - 1, color);
     }
 
     /** A small rounded label; returns its width, to set the next one after it. */
-    public static int badge(GuiGraphicsExtractor graphics, Font font, Component text, int x, int y, int background, int color) {
+    public static int badge(GuiGraphics graphics, Font font, Component text, int x, int y, int background, int color) {
         int width = font.width(text) + 8;
         rounded(graphics, x, y, width, 11, background);
-        graphics.text(font, text, x + 4, y + 2, color, false);
+        graphics.drawString(font, text, x + 4, y + 2, color, false);
         return width;
     }
 
     /** The well a text field sits in, its border in the accent while it has focus. */
-    public static void field(GuiGraphicsExtractor graphics, int x, int y, int width, int height, boolean focused) {
+    public static void field(GuiGraphics graphics, int x, int y, int width, int height, boolean focused) {
         rounded(graphics, x - 1, y - 1, width + 2, height + 2, focused ? accent() : BORDER);
         rounded(graphics, x, y, width, height, FIELD);
     }
 
     /** A slim scrollbar, shown only when there is more than fits. */
-    public static void scrollbar(GuiGraphicsExtractor graphics, int x, int y, int height, int first, int shown, int total) {
+    public static void scrollbar(GuiGraphics graphics, int x, int y, int height, int first, int shown, int total) {
         if (total <= shown) return;
         graphics.fill(x, y, x + 2, y + height, TRACK);
         int thumb = Math.max(8, height * shown / total);
@@ -116,7 +116,7 @@ public final class ScreenStyle {
     }
 
     /** Hints side by side, as one row centred on {@code centerX}: each a key and what it does. */
-    public static void hints(GuiGraphicsExtractor graphics, Font font, int centerX, int y, Component... keysAndActions) {
+    public static void hints(GuiGraphics graphics, Font font, int centerX, int y, Component... keysAndActions) {
         int width = -HINT_GAP;
         for (int i = 0; i < keysAndActions.length; i += 2) width += hintWidth(font, keysAndActions[i], keysAndActions[i + 1]) + HINT_GAP;
         int x = centerX - width / 2;
@@ -124,9 +124,9 @@ public final class ScreenStyle {
     }
 
     /** A key shown as a keycap in a hint ("LMB"), then what it does; returns where the next hint starts. */
-    public static int hint(GuiGraphicsExtractor graphics, Font font, Component key, Component action, int x, int y) {
+    public static int hint(GuiGraphics graphics, Font font, Component key, Component action, int x, int y) {
         int width = badge(graphics, font, key, x, y, 0xFF2A313B, TEXT);
-        graphics.text(font, action, x + width + 4, y + 2, MUTED, false);
+        graphics.drawString(font, action, x + width + 4, y + 2, MUTED, false);
         return x + width + 4 + font.width(action) + HINT_GAP;
     }
 }

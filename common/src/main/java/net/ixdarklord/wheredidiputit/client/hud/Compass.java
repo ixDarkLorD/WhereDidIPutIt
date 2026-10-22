@@ -1,18 +1,17 @@
 package net.ixdarklord.wheredidiputit.client.hud;
 
+import com.mojang.math.Axis;
 import net.ixdarklord.coolcatcore.api.event.v2.client.ClientGuiEvents;
 import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 import net.ixdarklord.wheredidiputit.client.render.ContainerHighlight;
 import net.ixdarklord.wheredidiputit.client.render.Guidance;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.ARGB;
+import net.minecraft.resources.ResourceLocation;
+import net.ixdarklord.wheredidiputit.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
@@ -22,7 +21,7 @@ import net.minecraft.world.phys.Vec3;
  * opened ({@code highlight.compass}).
  */
 public final class Compass {
-    private static final Identifier ARROW = WhereDidIPutIt.id("textures/gui/arrow.png");
+    private static final ResourceLocation ARROW = WhereDidIPutIt.id("textures/gui/arrow.png");
     private static final int SIZE = 16;
     private static final int TOP = 6;
     private static final int TEXT_COLOR = 0xFFE0E0E0;
@@ -34,7 +33,7 @@ public final class Compass {
         ClientGuiEvents.RENDER_HUD.register(Compass::render);
     }
 
-    private static void render(GuiGraphicsExtractor graphics, DeltaTracker delta) {
+    private static void render(GuiGraphics graphics, float partialTick) {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (player == null || minecraft.level == null || minecraft.options.hideGui || !WDIPIClientConfig.COMPASS.get()) return;
@@ -51,13 +50,13 @@ public final class Compass {
         int x = graphics.guiWidth() / 2 - width / 2;
         int rgb = WDIPIClientConfig.HIGHLIGHT_COLOR.get() & 0xFFFFFF;
 
-        graphics.item(target.item(), x, TOP);
+        graphics.renderItem(target.item(), x, TOP);
         // The arrow texture points right: a quarter turn back makes "ahead" point up.
-        graphics.pose().pushMatrix();
-        graphics.pose().translate(x + SIZE + 2 + SIZE / 2.0F, TOP + SIZE / 2.0F);
-        graphics.pose().rotate((float) Math.toRadians(turn) - Mth.HALF_PI);
-        graphics.blit(RenderPipelines.GUI_TEXTURED, ARROW, -SIZE / 2, -SIZE / 2, 0.0F, 0.0F, SIZE, SIZE, SIZE * 2, SIZE, ARGB.opaque(rgb));
-        graphics.pose().popMatrix();
-        graphics.text(minecraft.font, distance, x + SIZE * 2 + 6, TOP + 4, TEXT_COLOR);
+        graphics.pose().pushPose();
+        graphics.pose().translate(x + SIZE + 2 + SIZE / 2.0F, TOP + SIZE / 2.0F, 0.0F);
+        graphics.pose().mulPose(Axis.ZP.rotation((float) Math.toRadians(turn) - Mth.HALF_PI));
+        TargetArrow.blitTinted(graphics, ARROW, SIZE, SIZE * 2, ARGB.opaque(rgb));
+        graphics.pose().popPose();
+        graphics.drawString(minecraft.font, distance, x + SIZE * 2 + 6, TOP + 4, TEXT_COLOR);
     }
 }

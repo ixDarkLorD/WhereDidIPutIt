@@ -7,6 +7,7 @@ import net.ixdarklord.wheredidiputit.config.WDIPIServerConfig;
 import net.ixdarklord.wheredidiputit.find.ItemMatcher;
 import net.ixdarklord.wheredidiputit.memory.ContainerKeys;
 import net.ixdarklord.wheredidiputit.memory.StoredItem;
+import net.ixdarklord.wheredidiputit.mixin.RandomizableContainerBlockEntityAccessor;
 import net.ixdarklord.wheredidiputit.network.FindRequestPayload;
 import net.ixdarklord.wheredidiputit.network.FindResultPayload;
 import net.ixdarklord.wheredidiputit.network.HelloPayload;
@@ -17,13 +18,13 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import net.minecraft.world.Container;
-import net.minecraft.world.RandomizableContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -78,7 +79,7 @@ public final class LiveSearchServer {
         LAST_REQUEST.put(player.getUUID(), now);
         boolean nested = request.nested() && WDIPIServerConfig.INCLUDE_SHULKER_CONTENTS.get();
         ItemMatcher matcher = ItemMatcher.of(request.query(), request.mode(), nested, request.ignoredTags());
-        reply(player, request, FindResultPayload.Status.OK, radius, search(player.level(), player.getEyePosition(), matcher, radius, player));
+        reply(player, request, FindResultPayload.Status.OK, radius, search(player.serverLevel(), player.getEyePosition(), matcher, radius, player));
     }
 
     private static void reply(ServerPlayer player, FindRequestPayload request, FindResultPayload.Status status, int radius, List<FindResultPayload.Hit> hits) {
@@ -153,7 +154,7 @@ public final class LiveSearchServer {
     private static boolean searchable(@Nullable ServerPlayer player, ServerLevel level, BlockEntity blockEntity) {
         if (!(blockEntity instanceof Container)) return false;
         // Reading an unlooted chest would roll its loot, and tell the player what it holds before they open it.
-        if (blockEntity instanceof RandomizableContainer randomizable && randomizable.getLootTable() != null) return false;
+        if (blockEntity instanceof RandomizableContainerBlockEntity randomizable && ((RandomizableContainerBlockEntityAccessor) randomizable).wheredidiputit$getLootTable() != null) return false;
         if (player == null) return true;
         if (blockEntity instanceof BaseContainerBlockEntity base && !base.canOpen(player)) return false;
         if (blockEntity.getBlockState().is(EXCLUDED)) return false;

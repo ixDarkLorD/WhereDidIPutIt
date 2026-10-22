@@ -12,12 +12,10 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.context.ContextMap;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.display.RecipeDisplayEntry;
-import net.minecraft.world.item.crafting.display.SlotDisplayContext;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,11 +46,12 @@ public final class RecipeNeeds {
         if (player == null || level == null || memory == null) return;
 
         Map<Ingredient, Integer> missing = null;
-        ContextMap context = SlotDisplayContext.fromLevel(level);
         for (RecipeCollection collection : player.getRecipeBook().getCollections()) {
-            for (RecipeDisplayEntry recipe : collection.getRecipes()) {
-                if (recipe.craftingRequirements().isEmpty() || recipe.resultItems(context).stream().noneMatch(result -> result.is(target.getItem()))) continue;
-                Map<Ingredient, Integer> lacking = missing(recipe.craftingRequirements().get(), player.getInventory());
+            for (Recipe<?> recipe : collection.getRecipes()) {
+                // 1.20.1's recipe book lists every recipe; only the unlocked ones count, as on 26.1.
+                if (!player.getRecipeBook().contains(recipe) || recipe.getIngredients().isEmpty()
+                        || !recipe.getResultItem(level.registryAccess()).is(target.getItem())) continue;
+                Map<Ingredient, Integer> lacking = missing(recipe.getIngredients(), player.getInventory());
                 if (missing == null || total(lacking) < total(missing)) missing = lacking;
             }
         }
@@ -83,14 +82,19 @@ public final class RecipeNeeds {
 
     // How many of each ingredient the recipe needs that the inventory hasn't got; empty when it has everything.
     private static Map<Ingredient, Integer> missing(List<Ingredient> requirements, Inventory inventory) {
+        // By what they accept: 1.20.1's ingredients aren't equal to one another, so a shapeless recipe's three planks
+        // are three of them.
+        Map<String, Ingredient> byJson = new LinkedHashMap<>();
         Map<Ingredient, Integer> needed = new LinkedHashMap<>();
         for (Ingredient ingredient : requirements) {
-            if (!ingredient.isEmpty()) needed.merge(ingredient, 1, Integer::sum);
+            if (ingredient.isEmpty()) continue;
+            Ingredient same = byJson.computeIfAbsent(ingredient.toJson().toString(), json -> ingredient);
+            needed.merge(same, 1, Integer::sum);
         }
         Map<Ingredient, Integer> missing = new LinkedHashMap<>();
         needed.forEach((ingredient, count) -> {
             int have = 0;
-            for (ItemStack stack : inventory.getNonEquipmentItems()) {
+            for (ItemStack stack : inventory.items) {
                 if (ingredient.test(stack)) have += stack.getCount();
             }
             if (have < count) missing.put(ingredient, count - have);

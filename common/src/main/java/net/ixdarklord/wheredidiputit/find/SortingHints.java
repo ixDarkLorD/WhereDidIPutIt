@@ -35,7 +35,7 @@ public final class SortingHints {
 
     public static void init() {
         // At the end of the tooltip, after the last-seen section (registered before this).
-        ItemTooltipEvents.APPEND.register((stack, context, player, flag, lines) -> append(stack, lines));
+        ItemTooltipEvents.APPEND.register((stack, player, flag, lines) -> append(stack, lines));
     }
 
     private static void append(ItemStack stack, List<Component> lines) {
@@ -47,7 +47,7 @@ public final class SortingHints {
         if (open == null || memory == null) return;
 
         Answer answer = last;
-        if (answer == null || !answer.open.equals(open) || answer.version != memory.version() || !ItemStack.isSameItemSameComponents(answer.stack, stack)) {
+        if (answer == null || !answer.open.equals(open) || answer.version != memory.version() || !ItemStack.isSameItemSameTags(answer.stack, stack)) {
             answer = answer(memory, open, stack, here(screen, stack, minecraft.player.getInventory()));
             last = answer;
         }
@@ -60,7 +60,7 @@ public final class SortingHints {
     private static long here(AbstractContainerScreen<?> screen, ItemStack stack, Inventory inventory) {
         long count = 0;
         for (Slot slot : screen.getMenu().slots) {
-            if (slot.container != inventory && ItemStack.isSameItemSameComponents(slot.getItem(), stack)) count += slot.getItem().getCount();
+            if (slot.container != inventory && ItemStack.isSameItemSameTags(slot.getItem(), stack)) count += slot.getItem().getCount();
         }
         return count;
     }
@@ -74,7 +74,7 @@ public final class SortingHints {
             if (record.ignored() || record.pos().equals(open) || Vec3.atCenterOf(record.pos()).distanceTo(from) > NEARBY) continue;
             long count = 0;
             for (StoredItem item : record.items()) {
-                if (ItemStack.isSameItemSameComponents(item.stack(), stack)) count += item.count();
+                if (ItemStack.isSameItemSameTags(item.stack(), stack)) count += item.count();
             }
             if (count > mostCount) {
                 most = record;

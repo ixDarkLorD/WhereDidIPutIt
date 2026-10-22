@@ -1,6 +1,6 @@
-#version 330
+#version 150
 
-#moj_import <coolcatlib:vfx.glsl>
+#moj_import <coolcatcanvas:vfx.glsl>
 
 // The look of the found container's outline (ContainerHighlight), shared by its edges (vfx/outline_line) and its
 // corners (vfx/outline_dot). Distances are in units of the glow's half width: 0 on the line, 1 where the glow ends.
