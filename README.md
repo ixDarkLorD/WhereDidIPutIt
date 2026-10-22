@@ -1,20 +1,22 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ixDarkLorD/WhereDidIPutIt/26.1.2/.github/assets/banner.png" alt="Where Did I Put It?" width="100%">
+  <img src="https://raw.githubusercontent.com/ixDarkLorD/WhereDidIPutIt/26.1.2/common/src/main/resources/mod_logo.png" alt="Where Did I Put It?" width="160">
 </p>
 
-<p align="center"><b>Hover an item, press a key, and the nearest container holding it lights up.</b></p>
+<h1 align="center">Where Did I Put It?</h1>
 
 <p align="center">
-  <a href="https://modrinth.com/mod/where-did-i-put-it">Modrinth</a> ·
-  <a href="https://github.com/ixDarkLorD/WhereDidIPutIt/issues">Issues</a> ·
-  <a href="https://discord.gg/ZapGEPqm2V">Discord</a>
+  <b>Stop opening every chest.</b><br>
+  Hover an item, press a key, and the nearest container holding it lights up.
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/fabric.svg" alt="Fabric" height="26">
-  <img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/neoforge.svg" alt="NeoForge" height="26">
-  <img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/forge.svg" alt="Forge" height="26">
-  <img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/client-side.svg" alt="Client side" height="26">
+  <a href="https://modrinth.com/mod/where-did-i-put-it"><img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/wheredidiputit/modrinth.svg" alt="Modrinth" height="26"></a>
+  <a href="https://discord.gg/ZapGEPqm2V"><img src="https://img.shields.io/discord/1173075408556654592?style=flat&logo=discord&logoColor=white&label=&labelColor=ffaa00&color=3A3F58" alt="Discord" width="110" height="26"></a>
+</p>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/wheredidiputit/fabric.svg" alt="Fabric" height="26">
+  <img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/wheredidiputit/neoforge.svg" alt="NeoForge" height="26">
+  <img src="https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/badges/wheredidiputit/forge.svg" alt="Forge" height="26">
 </p>
 
 <hr>
