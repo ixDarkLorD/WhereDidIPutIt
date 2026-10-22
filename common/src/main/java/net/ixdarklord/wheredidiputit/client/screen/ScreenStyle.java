@@ -86,10 +86,15 @@ public final class ScreenStyle {
 
     /** A small rounded label; returns its width, to set the next one after it. */
     public static int badge(GuiGraphicsExtractor graphics, Font font, Component text, int x, int y, int background, int color) {
-        int width = font.width(text) + 8;
+        int width = badgeWidth(font, text);
         rounded(graphics, x, y, width, 11, background);
         graphics.text(font, text, x + 4, y + 2, color, false);
         return width;
+    }
+
+    /** How wide {@link #badge} draws this text. */
+    public static int badgeWidth(Font font, Component text) {
+        return font.width(text) + 8;
     }
 
     /** The well a text field sits in, its border in the accent while it has focus. */
