@@ -15,5 +15,6 @@ public final class WhereDidIPutItNeoForge extends NeoForgeModEntrypoint {
         this.common(WhereDidIPutItNeoForgeCommon::new);
         this.client(() -> WhereDidIPutItClient::new);
         this.client(() -> WhereDidIPutItNeoForgeClient::new);
+        RequiredChannel.register(this.modEventBus);
     }
 }
