@@ -3,6 +3,7 @@ package net.ixdarklord.wheredidiputit;
 import net.ixdarklord.coolcatcore.api.core.ClientModConstructor;
 import net.ixdarklord.coolcatcore.api.platform.Platform;
 import net.ixdarklord.wheredidiputit.client.hud.Compass;
+import net.ixdarklord.wheredidiputit.client.hud.GatherHud;
 import net.ixdarklord.wheredidiputit.client.hud.ContentsPreview;
 import net.ixdarklord.wheredidiputit.client.hud.ItemMarker;
 import net.ixdarklord.wheredidiputit.client.hud.TargetArrow;
@@ -11,9 +12,11 @@ import net.ixdarklord.wheredidiputit.client.render.Guidance;
 import net.ixdarklord.wheredidiputit.client.screen.ScreenKeys;
 import net.ixdarklord.wheredidiputit.compat.rei.ReiCompat;
 import net.ixdarklord.wheredidiputit.find.FindKey;
+import net.ixdarklord.wheredidiputit.find.GatherList;
 import net.ixdarklord.wheredidiputit.find.IgnoreKey;
 import net.ixdarklord.wheredidiputit.find.LiveSearch;
 import net.ixdarklord.wheredidiputit.find.LastSeenTooltip;
+import net.ixdarklord.wheredidiputit.find.QuickStack;
 import net.ixdarklord.wheredidiputit.find.SearchHistory;
 import net.ixdarklord.wheredidiputit.find.SortingHints;
 import net.ixdarklord.wheredidiputit.memory.ContainerMemory;
@@ -33,6 +36,8 @@ public final class WhereDidIPutItClient implements ClientModConstructor {
         IgnoreKey.init();
         ScreenKeys.init();
         LiveSearch.init();
+        QuickStack.init();
+        GatherList.init();
         LastSeenTooltip.init();
         SortingHints.init();
         SearchHistory.init();
@@ -43,6 +48,7 @@ public final class WhereDidIPutItClient implements ClientModConstructor {
         ContentsPreview.init();
         TargetArrow.init();
         Compass.init();
+        GatherHud.init();
         // JEI's plugin registers itself when JEI loads it; REI is asked directly.
         if (Platform.isModLoaded(ReiCompat.MOD_ID)) ReiCompat.init();
     }

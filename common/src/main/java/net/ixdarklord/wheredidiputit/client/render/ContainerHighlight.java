@@ -86,6 +86,11 @@ public final class ContainerHighlight {
 
     /** Points out the given containers in the player's level, replacing what was pointed out before. */
     public static void show(Level level, List<Found> found) {
+        show(level, found, true);
+    }
+
+    /** The same; with {@code guide} false, a single container isn't followed by the path line and compass (quick stack). */
+    public static void show(Level level, List<Found> found, boolean guide) {
         long now = Util.getMillis();
         long end = now + WDIPIClientConfig.HIGHLIGHT_DURATION.get() * 1000L;
         List<Target> shown = new ArrayList<>();
@@ -106,9 +111,13 @@ public final class ContainerHighlight {
                     container.count(), container.seenAt(), null, now, end));
         }
         targets = List.copyOf(shown);
-        if (shown.size() == 1) {
+        if (guide && shown.size() == 1) {
             Target only = shown.get(0);
             Guidance.follow(level, only.pos, only.box, only.item);
+        } else {
+            // A find of several (or one not to be followed) replaces what was pointed out before: a path line still
+            // leading to an earlier find's container would point the wrong way.
+            Guidance.clear();
         }
         if (WDIPIClientConfig.SOUND.get()) chime(shown);
     }

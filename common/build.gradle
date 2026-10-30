@@ -7,6 +7,9 @@ dependencies {
     // Optional recipe viewers: the find key reads the entry under the mouse (compat/jei, compat/rei)
     modCompileOnly libs.jei.api.common
     modCompileOnly libs.rei.api.common
+
+    // Optional Jade: the compass keeps clear of its box (compat/jade). Its API classes are the same in both loaders' jars.
+    modCompileOnly("maven.modrinth:jade:${jade_version}+fabric") { transitive = false }
 }
 
 // The shared main.gradle publishes every subproject's shadowJar. For common it must be a plain jar of this
