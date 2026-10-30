@@ -1,6 +1,17 @@
 # Changelog
 This file is for listing all the changes to this project
 
+## v1.1.0 Release | 2026-10-30
+### ✨ New Features
+- **Quick stack to nearby** (unbound by default): press it while playing, or in your inventory, and everything in your main inventory (not the hotbar) goes into the nearby containers that already hold the same item, topping up their stacks first. The containers that got something light up. Done by the server, so it needs the mod there; the server can turn it off or change how far it reaches (`quickStack`).
+- **Gathering list** (unbound by default): press it on an item to add it to a list on the HUD, with how many you carry of how many you need. An item you have stored somewhere is fetched itself; one you don't, by what crafting it takes. Shift-click an item in the search screen to add a stack of it. The nearest container with something on the list is pointed out, then the next one once you've taken from it, and lines tick off as you pick things up. Press the key while playing to clear the list.
+- **Tidy up**: a button in the container browser lists every item spread over two or more containers, with the container that holds the most of it. Click one to see all its places at once.
+- The compass can be moved anywhere on the screen (`compassX`, `compassY`), and it moves below Jade's box when that is in the way.
+### 🐛 Bug Fixes
+- Pointing out several containers no longer leaves an earlier find's path line on screen.
+### 🛠️ Changes
+- The mod is now needed on both the client and the server. NeoForge and Forge turn away a client without it from a server with it, and the other way round; Fabric can't check this.
+
 ## v26.2-1 Release | 2026-10-22
 ### 🛠️ Changes
 - Ported to Minecraft 26.2 (Fabric and NeoForge), with every feature of v26.1.2-1.
