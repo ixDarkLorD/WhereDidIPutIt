@@ -25,8 +25,8 @@
 ## ✨ About
 
 Where Did I Put It? remembers what's in every chest, barrel and shulker box you open, so finding something is one key
-press instead of opening twenty chests. It works **client side on any server**; with the mod on the server too,
-searches look in the real containers around you, even ones you never opened.
+press instead of opening twenty chests. It's needed **on both the client and the server**: searches ask the server,
+so they look in the real containers around you, even ones you never opened.
 
 ## 🧩 Features
 

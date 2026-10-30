@@ -35,6 +35,14 @@ public final class WDIPIServerConfig {
             .comment("Players on the same team share what they have seen in containers: each container one of them opens is remembered by their teammates who are online. Off, nobody learns what another player saw.").build();
     static {
         BUILDER.pop();
+        BUILDER.push("quickStack", "Putting items from a player's inventory into nearby containers that already hold them.");
+    }
+    public static final ConfigValue<Boolean> ALLOW_QUICK_STACK = BUILDER.bool("allowQuickStack", true)
+            .comment("Whether players may quick stack: their inventory's items (not the hotbar) go into the nearby containers that already hold the same item.").build();
+    public static final ConfigValue<Integer> QUICK_STACK_RADIUS = BUILDER.intValue("quickStackRadius", 8)
+            .range(2, 16).slider().comment("How far, in blocks, quick stack reaches round the player.").enabledWhen(ALLOW_QUICK_STACK).build();
+    static {
+        BUILDER.pop();
     }
 
     public static final Config CONFIG = BUILDER.build();

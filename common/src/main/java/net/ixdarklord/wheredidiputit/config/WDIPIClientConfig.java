@@ -48,9 +48,13 @@ public final class WDIPIClientConfig {
     public static final ConfigValue<Boolean> GHOST = BUILDER.bool("ghost", true)
             .comment("Shows a see-through ghost of a highlighted container where walls hide it.").enabledWhen(ENABLED).build();
     public static final ConfigValue<Boolean> PATH_LINE = BUILDER.bool("pathLine", true)
-            .comment("After finding one container, draws a line of dots on the ground along a walking route to it, until you open it.").enabledWhen(ENABLED).build();
+            .comment("After finding one container, draws a line from you to it, until you open it.").enabledWhen(ENABLED).build();
     public static final ConfigValue<Boolean> COMPASS = BUILDER.bool("compass", true)
             .comment("After finding one container, keeps a small compass at the top of the screen pointing to it, until you open it.").enabledWhen(ENABLED).build();
+    public static final ConfigValue<Integer> COMPASS_X = BUILDER.intValue("compassX", 50)
+            .range(0, 100).slider().comment("Where the compass sits across the screen, in percent of its width from the left (50 is the middle).").enabledWhen(COMPASS).build();
+    public static final ConfigValue<Integer> COMPASS_Y = BUILDER.intValue("compassY", 6)
+            .range(0, 200).slider().comment("How far down from the top of the screen the compass sits. It moves below Jade's box when that is in the way.").enabledWhen(COMPASS).build();
     public static final ConfigValue<Boolean> SOUND = BUILDER.bool("sound", true)
             .comment("Plays a soft chime from the direction of each container found.").enabledWhen(ENABLED).build();
     public static final ConfigValue<Boolean> SHOW_AGE = BUILDER.bool("showAge", true)

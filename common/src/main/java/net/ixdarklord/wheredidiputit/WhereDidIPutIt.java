@@ -4,6 +4,7 @@ import net.ixdarklord.coolcatcore.api.core.ModConstructor;
 import net.ixdarklord.coolcatcore.api.platform.Platform;
 import net.ixdarklord.wheredidiputit.config.WDIPIConfigs;
 import net.ixdarklord.wheredidiputit.live.LiveSearchServer;
+import net.ixdarklord.wheredidiputit.live.QuickStackServer;
 import net.ixdarklord.wheredidiputit.live.TeamSharingServer;
 import net.ixdarklord.wheredidiputit.live.WDIPICommands;
 import net.ixdarklord.wheredidiputit.network.WDIPINetwork;
@@ -31,6 +32,7 @@ public final class WhereDidIPutIt implements ModConstructor {
         LiveSearchServer.init();
         WDIPICommands.init();
         TeamSharingServer.init();
+        QuickStackServer.init();
         // Refined Storage's reader (compat/refinedstorage) is left out until Refined Storage has a 26.2 build.
     }
 
