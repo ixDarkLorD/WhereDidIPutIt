@@ -16,6 +16,7 @@ dependencies {
     // Recipe viewers in a dev run only when asked (-Ptest_jei=true, -Ptest_rei=true), to try the find key on their entries.
     if (project.findProperty("test_jei") == "true") modLocalRuntime libs.jei.neoforge
     if (project.findProperty("test_rei") == "true") modLocalRuntime libs.rei.neoforge
+    if (project.findProperty("test_jade") == "true") modLocalRuntime("maven.modrinth:jade:${jade_version}+neoforge") { transitive = false }
 
     // Optional storage mods whose terminal readers live here (compat/): AE2 and Simple Storage Network are NeoForge
     // only, and Tom's has a jar per loader. -Ptest_<mod>=true runs them.

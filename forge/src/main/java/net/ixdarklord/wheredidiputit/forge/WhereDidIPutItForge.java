@@ -13,5 +13,6 @@ public final class WhereDidIPutItForge extends ForgeModEntrypoint {
         super(context);
         this.common(WhereDidIPutIt::new);
         this.client(() -> WhereDidIPutItClient::new);
+        RequiredChannel.register();
     }
 }
