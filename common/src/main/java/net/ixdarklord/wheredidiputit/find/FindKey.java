@@ -70,6 +70,7 @@ public final class FindKey {
      */
     public static boolean onKeyPressed(KeyEvent event, ItemStack hovered) {
         if (hovered.isEmpty() || !WDIPIClientConfig.ENABLED.get()) return false;
+        if (GatherList.onKeyPressed(event, hovered)) return true;
         boolean all = FIND_ALL.matches(event);
         boolean similar = FIND_SIMILAR.matches(event);
         boolean space = FIND_SPACE.matches(event);
