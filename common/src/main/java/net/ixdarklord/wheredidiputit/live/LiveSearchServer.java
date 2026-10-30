@@ -150,7 +150,7 @@ public final class LiveSearchServer {
     }
 
     // Whether this block entity is a container the player could look into themselves (any container for no player).
-    private static boolean searchable(@Nullable ServerPlayer player, ServerLevel level, BlockEntity blockEntity) {
+    static boolean searchable(@Nullable ServerPlayer player, ServerLevel level, BlockEntity blockEntity) {
         if (!(blockEntity instanceof Container)) return false;
         // Reading an unlooted chest would roll its loot, and tell the player what it holds before they open it.
         if (blockEntity instanceof RandomizableContainer randomizable && randomizable.getLootTable() != null) return false;
