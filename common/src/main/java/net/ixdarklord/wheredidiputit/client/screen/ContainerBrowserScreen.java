@@ -49,6 +49,8 @@ public final class ContainerBrowserScreen extends Screen {
     private static final int MAX_COLUMNS = 9;
     private static final int MIN_COLUMNS = 5;
     private static final int SLOT = 18;
+    /** The header's button to the tidy-up view ({@link ConsolidateScreen}). */
+    private static final int TIDY_WIDTH = 52;
     /** From the panel's top to the first list row, and to the contents grid's first row. */
     private static final int LIST_OFFSET = 54;
     private static final int GRID_OFFSET = 82;
@@ -132,6 +134,8 @@ public final class ContainerBrowserScreen extends Screen {
             this.refresh();
         }));
 
+        this.addRenderableWidget(new FlatButton(this.left + this.panelWidth - PADDING - TIDY_WIDTH, this.top + 4, TIDY_WIDTH, 16,
+                Component.translatable("gui.wheredidiputit.browser.tidy"), FlatButton.Kind.PLAIN, () -> this.minecraft.setScreen(new ConsolidateScreen(this))));
         int buttonY = this.top + this.panelHeight - PADDING - 16;
         int buttonWidth = (this.detailWidth() - 4) / 3;
         this.showButton = this.addRenderableWidget(new FlatButton(this.detailLeft(), buttonY, buttonWidth, 16,
@@ -259,7 +263,10 @@ public final class ContainerBrowserScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
         ScreenStyle.panel(graphics, this.left, this.top, this.panelWidth, this.panelHeight);
         int total = this.memory != null ? this.memory.records().size() : 0;
-        ScreenStyle.header(graphics, this.font, this.left, this.top, this.panelWidth, this.title, Component.translatable("gui.wheredidiputit.browser.count", total));
+        ScreenStyle.header(graphics, this.font, this.left, this.top, this.panelWidth, this.title, Component.empty());
+        // The count beside the tidy-up button, which takes the header's right end.
+        Component count = Component.translatable("gui.wheredidiputit.browser.count", total);
+        graphics.text(this.font, count, this.left + this.panelWidth - PADDING - TIDY_WIDTH - 6 - this.font.width(count), this.top + 8, ScreenStyle.MUTED, false);
         ScreenStyle.field(graphics, this.listLeft(), this.top + 31, this.listWidth - 58, 16, this.search.isFocused());
         // The divider between the list and the picked container.
         graphics.fill(this.detailLeft() - 7, this.top + ScreenStyle.HEADER_HEIGHT + 8, this.detailLeft() - 6, this.top + this.panelHeight - PADDING, 0xFF2A313B);
