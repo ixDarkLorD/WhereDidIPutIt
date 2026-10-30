@@ -80,12 +80,44 @@ public final class RecipeNeeds {
         FindKey.highlight(minecraft, level, found);
     }
 
-    // How many of each ingredient the recipe needs that the inventory hasn't got; empty when it has everything.
-    private static Map<Ingredient, Integer> missing(List<Ingredient> requirements, Inventory inventory) {
+    /**
+     * What crafting {@code target} takes, ingredient by ingredient, from the unlocked recipe making it that lacks the
+     * fewest ingredients against the inventory; null when no unlocked recipe makes it (the gathering list's plans).
+     */
+    public static @Nullable Map<Ingredient, Integer> requirements(ItemStack target) {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        ClientLevel level = minecraft.level;
+        if (player == null || level == null) return null;
+        Map<Ingredient, Integer> best = null;
+        int bestMissing = Integer.MAX_VALUE;
+        for (RecipeCollection collection : player.getRecipeBook().getCollections()) {
+            for (RecipeHolder<?> recipe : collection.getRecipes()) {
+                // The book's collections hold every recipe the client was sent; only the unlocked ones count.
+                if (!player.getRecipeBook().contains(recipe) || recipe.value().getIngredients().isEmpty()
+                        || !recipe.value().getResultItem(level.registryAccess()).is(target.getItem())) continue;
+                int lacking = total(missing(recipe.value().getIngredients(), player.getInventory()));
+                if (lacking < bestMissing) {
+                    best = counted(recipe.value().getIngredients());
+                    bestMissing = lacking;
+                }
+            }
+        }
+        return best;
+    }
+
+    // How many of each ingredient a recipe takes.
+    private static Map<Ingredient, Integer> counted(List<Ingredient> requirements) {
         Map<Ingredient, Integer> needed = new LinkedHashMap<>();
         for (Ingredient ingredient : requirements) {
             if (!ingredient.isEmpty()) needed.merge(ingredient, 1, Integer::sum);
         }
+        return needed;
+    }
+
+    // How many of each ingredient the recipe needs that the inventory hasn't got; empty when it has everything.
+    private static Map<Ingredient, Integer> missing(List<Ingredient> requirements, Inventory inventory) {
+        Map<Ingredient, Integer> needed = counted(requirements);
         Map<Ingredient, Integer> missing = new LinkedHashMap<>();
         needed.forEach((ingredient, count) -> {
             int have = 0;

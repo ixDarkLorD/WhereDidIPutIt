@@ -17,6 +17,10 @@ dependencies {
     modCompileOnly libs.jei.api.common
     modCompileOnly libs.rei.api.common
 
+    // Optional Jade: the compass keeps clear of its box (compat/jade). Its API classes are loader-free; the Fabric jar
+    // is the one remapped like common.
+    modCompileOnly("maven.modrinth:jade:${jade_version}+fabric") { transitive = false }
+
     // Optional storage mods with a loader-free module of their own: their terminal readers live in common (compat/)
     modCompileOnly "com.refinedmods.refinedstorage:refinedstorage-common:${refined_storage_version}"
 }

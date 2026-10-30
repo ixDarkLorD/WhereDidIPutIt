@@ -3,6 +3,7 @@ package net.ixdarklord.wheredidiputit.client.screen;
 import net.ixdarklord.wheredidiputit.client.hud.ItemMarker;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
 import net.ixdarklord.wheredidiputit.find.FindKey;
+import net.ixdarklord.wheredidiputit.find.GatherList;
 import net.ixdarklord.wheredidiputit.find.ScreenNotice;
 import net.ixdarklord.wheredidiputit.find.StoredStacks;
 import net.ixdarklord.wheredidiputit.find.TooltipLines;
@@ -22,8 +23,8 @@ import java.util.List;
 /**
  * Finds an item by name, for items the player isn't holding or hovering: every item remembered in the dimension's
  * containers, narrowed by what is typed ({@code #tag}, {@code @mod} or part of a name). Left click points out the
- * nearest container holding one, right click all of them, as the two find keys do. Drawn in the screens' shared look
- * ({@link ScreenStyle}).
+ * nearest container holding one, right click all of them, as the two find keys do; shift-click puts a stack on the
+ * {@link GatherList}. Drawn in the screens' shared look ({@link ScreenStyle}).
  */
 public final class SearchScreen extends Screen {
     private static final int COLUMNS = 9;
@@ -131,6 +132,7 @@ public final class SearchScreen extends Screen {
             List<Component> lines = new ArrayList<>(getTooltipFromItem(this.minecraft, entry.stack()));
             lines.add(Component.empty());
             lines.add(TooltipLines.line("stored", TooltipLines.stored(entry.count(), entry.containers())));
+            lines.add(Component.translatable("gui.wheredidiputit.search.shift_hint").withStyle(ChatFormatting.DARK_GRAY));
             graphics.renderComponentTooltip(this.font, lines, mouseX, mouseY);
         }
         ScreenNotice.render(graphics, this.left + PANEL_WIDTH / 2, this.top);
@@ -148,6 +150,11 @@ public final class SearchScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         int index = this.slotAt(mouseX, mouseY);
+        if (index >= 0 && button == GLFW.GLFW_MOUSE_BUTTON_LEFT && hasShiftDown()) {
+            // Shift-click: onto the gathering list, and the screen stays open to add more.
+            GatherList.addStack(this.shown.get(index).stack());
+            return true;
+        }
         if (index >= 0 && (button == GLFW.GLFW_MOUSE_BUTTON_LEFT || button == GLFW.GLFW_MOUSE_BUTTON_RIGHT)) {
             FindKey.find(this.shown.get(index).stack(), button == GLFW.GLFW_MOUSE_BUTTON_RIGHT);
             return true;
