@@ -29,6 +29,9 @@
     ],
     "jei_mod_plugin": [
       "net.ixdarklord.wheredidiputit.compat.jei.WDIPIJeiPlugin"
+    ],
+    "jade": [
+      "net.ixdarklord.wheredidiputit.compat.jade.WDIPIJadePlugin"
     ]
   },
   "mixins": [

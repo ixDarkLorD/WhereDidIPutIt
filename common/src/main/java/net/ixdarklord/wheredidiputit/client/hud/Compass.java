@@ -6,6 +6,7 @@ import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 import net.ixdarklord.wheredidiputit.client.render.ContainerHighlight;
 import net.ixdarklord.wheredidiputit.client.render.Guidance;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
@@ -18,19 +19,37 @@ import net.minecraft.world.phys.Vec3;
 /**
  * A small compass at the top of the screen while {@link Guidance} leads somewhere and the highlight is over: the item
  * found, an arrow turned towards the container as the player turns, and how far it is. It goes once the container is
- * opened ({@code highlight.compass}).
+ * opened ({@code highlight.compass}). Where it sits is set by {@code highlight.compassX} / {@code compassY}; when
+ * another mod's box drawn there last frame (Jade's, through {@code compat/jade}) would cover it, it moves below that.
  */
 public final class Compass {
     private static final ResourceLocation ARROW = WhereDidIPutIt.id("textures/gui/arrow.png");
     private static final int SIZE = 16;
-    private static final int TOP = 6;
     private static final int TEXT_COLOR = 0xFFE0E0E0;
+    /** How long a box reported by another mod is kept out of the way of: a frame or two, as it is reported each frame. */
+    private static final long AVOID_MILLIS = 150L;
+    private static final int AVOID_GAP = 3;
+
+    private static float avoidX;
+    private static float avoidY;
+    private static float avoidWidth;
+    private static float avoidHeight;
+    private static long avoidSeen;
 
     private Compass() {
     }
 
     public static void init() {
         ClientGuiEvents.RENDER_HUD.register(Compass::render);
+    }
+
+    /** A box another mod drew on the HUD this frame, in GUI pixels, for the compass to keep clear of. */
+    public static void avoid(float x, float y, float width, float height) {
+        avoidX = x;
+        avoidY = y;
+        avoidWidth = width;
+        avoidHeight = height;
+        avoidSeen = Util.getMillis();
     }
 
     private static void render(GuiGraphics graphics, float partialTick) {
@@ -47,16 +66,21 @@ public final class Compass {
         float turn = Mth.wrapDegrees(bearing - player.getYRot());
         Component distance = Component.translatable("gui.wheredidiputit.compass.distance", Mth.floor(to.length()));
         int width = SIZE + 2 + SIZE + 4 + minecraft.font.width(distance);
-        int x = graphics.guiWidth() / 2 - width / 2;
+        int x = Mth.clamp(graphics.guiWidth() * WDIPIClientConfig.COMPASS_X.get() / 100 - width / 2, 0, Math.max(0, graphics.guiWidth() - width));
+        int top = Mth.clamp(WDIPIClientConfig.COMPASS_Y.get(), 0, Math.max(0, graphics.guiHeight() - SIZE));
+        if (Util.getMillis() - avoidSeen < AVOID_MILLIS && x < avoidX + avoidWidth && x + width > avoidX
+                && top < avoidY + avoidHeight && top + SIZE > avoidY) {
+            top = Mth.ceil(avoidY + avoidHeight) + AVOID_GAP;
+        }
         int rgb = WDIPIClientConfig.HIGHLIGHT_COLOR.get() & 0xFFFFFF;
 
-        graphics.renderItem(target.item(), x, TOP);
+        graphics.renderItem(target.item(), x, top);
         // The arrow texture points right: a quarter turn back makes "ahead" point up.
         graphics.pose().pushPose();
-        graphics.pose().translate(x + SIZE + 2 + SIZE / 2.0F, TOP + SIZE / 2.0F, 0.0F);
+        graphics.pose().translate(x + SIZE + 2 + SIZE / 2.0F, top + SIZE / 2.0F, 0.0F);
         graphics.pose().mulPose(Axis.ZP.rotation((float) Math.toRadians(turn) - Mth.HALF_PI));
         TargetArrow.blitTinted(graphics, ARROW, SIZE, SIZE * 2, ARGB.opaque(rgb));
         graphics.pose().popPose();
-        graphics.drawString(minecraft.font, distance, x + SIZE * 2 + 6, TOP + 4, TEXT_COLOR);
+        graphics.drawString(minecraft.font, distance, x + SIZE * 2 + 6, top + 4, TEXT_COLOR);
     }
 }

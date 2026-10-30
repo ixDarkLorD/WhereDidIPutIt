@@ -3,6 +3,7 @@ package net.ixdarklord.wheredidiputit.mixin.client;
 import net.ixdarklord.wheredidiputit.find.FindKey;
 import net.ixdarklord.wheredidiputit.find.HoveredStacks;
 import net.ixdarklord.wheredidiputit.find.IgnoreKey;
+import net.ixdarklord.wheredidiputit.find.QuickStack;
 import net.ixdarklord.wheredidiputit.find.ScreenNotice;
 import net.ixdarklord.wheredidiputit.memory.StorageTerminals;
 import net.minecraft.client.gui.GuiGraphics;
@@ -48,7 +49,7 @@ public abstract class AbstractContainerScreenMixin extends Screen {
         // A text field that takes typing gets the letter, as it would without the mod (some screens type into one
         // through this method, such as storage terminals with a focused search box).
         if (this.wheredidiputit$typing()) return;
-        if (IgnoreKey.onKeyPressed(keyCode, scanCode, (AbstractContainerScreen<?>) (Object) this)) {
+        if (IgnoreKey.onKeyPressed(keyCode, scanCode, (AbstractContainerScreen<?>) (Object) this) || QuickStack.onKeyPressed(keyCode, scanCode)) {
             cir.setReturnValue(true);
             return;
         }

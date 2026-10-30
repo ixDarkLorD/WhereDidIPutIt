@@ -80,8 +80,34 @@ public final class RecipeNeeds {
         FindKey.highlight(minecraft, level, found);
     }
 
-    // How many of each ingredient the recipe needs that the inventory hasn't got; empty when it has everything.
-    private static Map<Ingredient, Integer> missing(List<Ingredient> requirements, Inventory inventory) {
+    /**
+     * What crafting {@code target} takes, ingredient by ingredient, from the unlocked recipe making it that lacks the
+     * fewest ingredients against the inventory; null when no unlocked recipe makes it (the gathering list's plans).
+     */
+    public static @Nullable Map<Ingredient, Integer> requirements(ItemStack target) {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        ClientLevel level = minecraft.level;
+        if (player == null || level == null) return null;
+        Map<Ingredient, Integer> best = null;
+        int bestMissing = Integer.MAX_VALUE;
+        for (RecipeCollection collection : player.getRecipeBook().getCollections()) {
+            for (Recipe<?> recipe : collection.getRecipes()) {
+                // 1.20.1's recipe book lists every recipe; only the unlocked ones count, as on 26.1.
+                if (!player.getRecipeBook().contains(recipe) || recipe.getIngredients().isEmpty()
+                        || !recipe.getResultItem(level.registryAccess()).is(target.getItem())) continue;
+                int lacking = total(missing(recipe.getIngredients(), player.getInventory()));
+                if (lacking < bestMissing) {
+                    best = counted(recipe.getIngredients());
+                    bestMissing = lacking;
+                }
+            }
+        }
+        return best;
+    }
+
+    // How many of each ingredient a recipe takes.
+    private static Map<Ingredient, Integer> counted(List<Ingredient> requirements) {
         // By what they accept: 1.20.1's ingredients aren't equal to one another, so a shapeless recipe's three planks
         // are three of them.
         Map<String, Ingredient> byJson = new LinkedHashMap<>();
@@ -91,6 +117,12 @@ public final class RecipeNeeds {
             Ingredient same = byJson.computeIfAbsent(ingredient.toJson().toString(), json -> ingredient);
             needed.merge(same, 1, Integer::sum);
         }
+        return needed;
+    }
+
+    // How many of each ingredient the recipe needs that the inventory hasn't got; empty when it has everything.
+    private static Map<Ingredient, Integer> missing(List<Ingredient> requirements, Inventory inventory) {
+        Map<Ingredient, Integer> needed = counted(requirements);
         Map<Ingredient, Integer> missing = new LinkedHashMap<>();
         needed.forEach((ingredient, count) -> {
             int have = 0;
