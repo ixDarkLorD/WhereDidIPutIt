@@ -2,11 +2,11 @@ package net.ixdarklord.wheredidiputit.forge;
 
 import net.ixdarklord.coolcatcore.api.core.ClientModConstructor;
 import net.ixdarklord.coolcatcore.api.platform.Platform;
-import net.ixdarklord.wheredidiputit.memory.StorageTerminals;
 import net.ixdarklord.wheredidiputit.forge.compat.Ae2Terminal;
 import net.ixdarklord.wheredidiputit.forge.compat.RefinedStorageTerminal;
 import net.ixdarklord.wheredidiputit.forge.compat.StorageNetworkTerminal;
 import net.ixdarklord.wheredidiputit.forge.compat.TomsStorageTerminal;
+import net.ixdarklord.wheredidiputit.memory.StorageTerminals;
 
 /** Forge's own client setup: the storage mods whose terminal readers need Forge jars, each only when installed. */
 public final class WhereDidIPutItForgeClient implements ClientModConstructor {

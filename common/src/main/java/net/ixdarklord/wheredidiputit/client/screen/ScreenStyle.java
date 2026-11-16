@@ -2,10 +2,10 @@ package net.ixdarklord.wheredidiputit.client.screen;
 
 import net.ixdarklord.coolcatcanvas.api.client.utils.RenderUtils;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
+import net.ixdarklord.wheredidiputit.util.ARGB;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.ixdarklord.wheredidiputit.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 

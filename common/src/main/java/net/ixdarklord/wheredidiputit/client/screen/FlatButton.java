@@ -1,12 +1,12 @@
 package net.ixdarklord.wheredidiputit.client.screen;
 
+import net.ixdarklord.wheredidiputit.util.ARGB;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
-import net.ixdarklord.wheredidiputit.util.ARGB;
 
 /**
  * A button in the screens' flat look ({@link ScreenStyle}): plain, filled with the accent ({@link Kind#PRIMARY}), or

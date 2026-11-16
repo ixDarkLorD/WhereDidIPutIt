@@ -1,7 +1,7 @@
 package net.ixdarklord.wheredidiputit.network;
 
-import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 import net.ixdarklord.coolcatcore.api.network.CustomPacketPayload;
+import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 
 /**
  * Client to server: put my inventory's items into the nearby containers that already hold them. The server decides

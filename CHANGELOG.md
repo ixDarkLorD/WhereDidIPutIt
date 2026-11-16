@@ -1,6 +1,14 @@
 # Changelog
 This file is for listing all the changes to this project
 
+## v1.2.0 Release | Unreleased
+### ✨ New Features
+- `/wdipi config` opens the mod's config screens, and `/wdipi config <name>` opens one of them (`client` or `server`).
+- `/wdipi config reload` reloads the config files after you edit them by hand, for operators.
+### 🛠️ Changes
+- Every player can now see `/wdipi`, but `/wdipi find` still needs operator permission.
+- The mod now needs CoolCatLib 8.3.0 or newer.
+
 ## v1.1.0 Release | 2026-10-30
 ### ✨ New Features
 - **Quick stack to nearby** (unbound by default): press it while playing, or in your inventory, and everything in your main inventory (not the hotbar) goes into the nearby containers that already hold the same item, topping up their stacks first. The containers that got something light up. Done by the server, so it needs the mod there; the server can turn it off or change how far it reaches (`quickStack`).

@@ -11,6 +11,7 @@ import net.ixdarklord.wheredidiputit.mixin.RandomizableContainerBlockEntityAcces
 import net.ixdarklord.wheredidiputit.network.FindRequestPayload;
 import net.ixdarklord.wheredidiputit.network.FindResultPayload;
 import net.ixdarklord.wheredidiputit.network.HelloPayload;
+import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -18,7 +19,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
-import net.minecraft.Util;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
