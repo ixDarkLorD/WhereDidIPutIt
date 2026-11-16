@@ -1,8 +1,8 @@
 package net.ixdarklord.wheredidiputit.network;
 
+import net.ixdarklord.coolcatcore.api.network.CustomPacketPayload;
 import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 import net.minecraft.core.BlockPos;
-import net.ixdarklord.coolcatcore.api.network.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 

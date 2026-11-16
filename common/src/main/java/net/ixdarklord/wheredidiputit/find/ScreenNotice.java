@@ -1,11 +1,11 @@
 package net.ixdarklord.wheredidiputit.find;
 
+import net.ixdarklord.wheredidiputit.util.ARGB;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.ixdarklord.wheredidiputit.util.ARGB;
 import net.minecraft.util.Mth;
-import net.minecraft.Util;
 import org.jetbrains.annotations.Nullable;
 
 /**
