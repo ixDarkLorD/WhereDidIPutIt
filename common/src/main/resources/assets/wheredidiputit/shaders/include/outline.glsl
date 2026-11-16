@@ -1,7 +1,7 @@
 #ifndef WHEREDIDIPUTIT_OUTLINE_GLSL
 #define WHEREDIDIPUTIT_OUTLINE_GLSL
 
-#include <coolcatlib:vfx.glsl>
+#include <coolcatcanvas:vfx.glsl>
 
 // The look of the found container's outline (ContainerHighlight), shared by its edges (vfx/outline_line) and its
 // corners (vfx/outline_dot). Distances are in units of the glow's half width: 0 on the line, 1 where the glow ends.
