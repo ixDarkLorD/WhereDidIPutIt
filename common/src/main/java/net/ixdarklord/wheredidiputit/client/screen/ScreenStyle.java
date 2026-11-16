@@ -1,6 +1,6 @@
 package net.ixdarklord.wheredidiputit.client.screen;
 
-import net.ixdarklord.coolcatcanvas.api.client.utils.RenderUtils;
+import net.ixdarklord.coolcatcanvas.api.client.render.RenderUtils;
 import net.ixdarklord.wheredidiputit.config.WDIPIClientConfig;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
