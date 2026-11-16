@@ -22,6 +22,7 @@ dependencies.components.withModule("net.fabricmc.fabric-api:fabric-loot-api-v2")
 dependencies {
     // CoolCatLib (Fabric). Its common classes are inside this jar.
     modImplementation("net.ixdarklord.coolcatlib:coolcatlib-fabric:${coolcatlib_version}") { transitive = false }
+    modImplementation("net.ixdarklord.coolcatlib:coolcatlib-canvas-fabric:${coolcatlib_version}") { transitive = false }
 
     // Recipe viewers in a dev run only when asked (-Ptest_jei=true, -Ptest_rei=true), to try the find key on their entries.
     if (project.findProperty("test_jei") == "true") modLocalRuntime libs.jei.fabric

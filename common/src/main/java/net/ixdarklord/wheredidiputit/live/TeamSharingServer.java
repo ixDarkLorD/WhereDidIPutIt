@@ -3,11 +3,11 @@ package net.ixdarklord.wheredidiputit.live;
 import net.ixdarklord.coolcatcore.api.event.v2.common.PlayerEvents;
 import net.ixdarklord.coolcatcore.api.network.Network;
 import net.ixdarklord.wheredidiputit.config.WDIPIServerConfig;
-import net.ixdarklord.wheredidiputit.network.SharedContainer;
 import net.ixdarklord.wheredidiputit.network.ShareContainerPayload;
+import net.ixdarklord.wheredidiputit.network.SharedContainer;
 import net.ixdarklord.wheredidiputit.network.SharedContainerPayload;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.Util;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 

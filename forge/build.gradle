@@ -3,6 +3,7 @@ apply from: "https://raw.githubusercontent.com/ixDarkLorD/ModResources/main/grad
 dependencies {
     // CoolCatLib (Forge). Its common classes are inside this jar.
     modImplementation("net.ixdarklord.coolcatlib:coolcatlib-forge:${coolcatlib_version}") { transitive = false }
+    modImplementation("net.ixdarklord.coolcatlib:coolcatlib-canvas-forge:${coolcatlib_version}") { transitive = false }
 
     // JEI in a dev run only when asked (-Ptest_jei=true), to try the find key on its entries. No storage mod the mod
     // reads has a Forge build for 1.21.1.
