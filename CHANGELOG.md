@@ -7,7 +7,7 @@ This file is for listing all the changes to this project
 - `/wdipi config reload` reloads the config files after you edit them by hand, for operators.
 ### 🛠️ Changes
 - Every player can now see `/wdipi`, but `/wdipi find` still needs operator permission.
-- The mod now needs CoolCatLib 8.3.0 or newer.
+- The mod now needs CoolCatLib 9.0.0 or newer.
 
 ## v1.1.0 Release | 2026-10-30
 ### ✨ New Features
