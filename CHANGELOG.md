@@ -1,7 +1,7 @@
 # Changelog
 This file is for listing all the changes to this project
 
-## v1.2.0 Release | Unreleased
+## v1.2.0 Release | 2026-11-16
 ### ✨ New Features
 - `/wdipi config` opens the mod's config screens, and `/wdipi config <name>` opens one of them (`client` or `server`).
 - `/wdipi config reload` reloads the config files after you edit them by hand, for operators.
