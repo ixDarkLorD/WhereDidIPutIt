@@ -4,7 +4,6 @@ import net.ixdarklord.coolcatcore.api.core.ModConstructor;
 import net.ixdarklord.coolcatcore.api.platform.Platform;
 import net.ixdarklord.wheredidiputit.config.WDIPIConfigs;
 import net.ixdarklord.wheredidiputit.live.LiveSearchServer;
-import net.ixdarklord.wheredidiputit.live.NetworkReaders;
 import net.ixdarklord.wheredidiputit.live.QuickStackServer;
 import net.ixdarklord.wheredidiputit.live.TeamSharingServer;
 import net.ixdarklord.wheredidiputit.live.WDIPICommands;

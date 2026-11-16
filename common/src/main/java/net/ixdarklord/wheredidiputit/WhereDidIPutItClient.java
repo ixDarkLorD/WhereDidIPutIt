@@ -3,8 +3,8 @@ package net.ixdarklord.wheredidiputit;
 import net.ixdarklord.coolcatcore.api.core.ClientModConstructor;
 import net.ixdarklord.coolcatcore.api.platform.Platform;
 import net.ixdarklord.wheredidiputit.client.hud.Compass;
-import net.ixdarklord.wheredidiputit.client.hud.GatherHud;
 import net.ixdarklord.wheredidiputit.client.hud.ContentsPreview;
+import net.ixdarklord.wheredidiputit.client.hud.GatherHud;
 import net.ixdarklord.wheredidiputit.client.hud.ItemMarker;
 import net.ixdarklord.wheredidiputit.client.hud.TargetArrow;
 import net.ixdarklord.wheredidiputit.client.render.ContainerHighlight;
@@ -14,14 +14,13 @@ import net.ixdarklord.wheredidiputit.compat.rei.ReiCompat;
 import net.ixdarklord.wheredidiputit.find.FindKey;
 import net.ixdarklord.wheredidiputit.find.GatherList;
 import net.ixdarklord.wheredidiputit.find.IgnoreKey;
-import net.ixdarklord.wheredidiputit.find.LiveSearch;
 import net.ixdarklord.wheredidiputit.find.LastSeenTooltip;
+import net.ixdarklord.wheredidiputit.find.LiveSearch;
 import net.ixdarklord.wheredidiputit.find.QuickStack;
 import net.ixdarklord.wheredidiputit.find.SearchHistory;
 import net.ixdarklord.wheredidiputit.find.SortingHints;
 import net.ixdarklord.wheredidiputit.memory.ContainerMemory;
 import net.ixdarklord.wheredidiputit.memory.MemoryCommands;
-import net.ixdarklord.wheredidiputit.memory.StorageTerminals;
 
 /**
  * Client mod constructor (CoolCatLib): container memory, the find key, highlights and the HUD.
