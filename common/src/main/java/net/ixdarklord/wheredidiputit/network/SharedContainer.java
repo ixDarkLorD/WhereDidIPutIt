@@ -4,8 +4,8 @@ import net.ixdarklord.wheredidiputit.memory.ContainerRecord;
 import net.ixdarklord.wheredidiputit.memory.StoredItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
 import java.util.List;

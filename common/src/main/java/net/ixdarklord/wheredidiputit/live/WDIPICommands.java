@@ -3,7 +3,8 @@ package net.ixdarklord.wheredidiputit.live;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.ixdarklord.coolcatcore.api.event.v2.common.CommandEvents;
+import net.ixdarklord.coolcatcore.api.command.ModCommands;
+import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 import net.ixdarklord.wheredidiputit.config.MatchMode;
 import net.ixdarklord.wheredidiputit.config.WDIPIServerConfig;
 import net.ixdarklord.wheredidiputit.find.ItemMatcher;
@@ -37,13 +38,12 @@ public final class WDIPICommands {
     }
 
     public static void init() {
-        CommandEvents.REGISTER.register((dispatcher, context, selection) -> dispatcher.register(Commands.literal("wdipi")
-                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
-                .then(Commands.literal("find")
+        ModCommands.register(WhereDidIPutIt.MOD_ID, "wdipi", (root, context, selection) -> root
+                .then(Commands.literal("find").requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .then(Commands.argument("item", ItemArgument.item(context))
                                 .executes(command -> find(command, DEFAULT_RADIUS))
                                 .then(Commands.argument("radius", IntegerArgumentType.integer(1, MAX_RADIUS))
-                                        .executes(command -> find(command, IntegerArgumentType.getInteger(command, "radius"))))))));
+                                        .executes(command -> find(command, IntegerArgumentType.getInteger(command, "radius")))))));
     }
 
     private static int find(CommandContext<CommandSourceStack> command, int radius) throws CommandSyntaxException {

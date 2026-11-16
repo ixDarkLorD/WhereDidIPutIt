@@ -3,6 +3,7 @@ package net.ixdarklord.wheredidiputit.memory;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import net.ixdarklord.coolcatcore.api.command.ModCommands;
 import net.ixdarklord.coolcatcore.api.event.v2.client.ClientCommandEvents;
 import net.ixdarklord.wheredidiputit.WhereDidIPutIt;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -27,7 +28,7 @@ public final class MemoryCommands {
     }
 
     public static void init() {
-        ClientCommandEvents.REGISTER.register((dispatcher, context) -> dispatcher.register(LiteralArgumentBuilder.<SharedSuggestionProvider>literal("wdipi_client")
+        ModCommands.registerClient(WhereDidIPutIt.MOD_ID, ModCommands.ClientNames.SUFFIXED, (root, context) -> root
                 .then(LiteralArgumentBuilder.<SharedSuggestionProvider>literal("export")
                         .executes(command -> export(defaultName()))
                         .then(RequiredArgumentBuilder.<SharedSuggestionProvider, String>argument("name", StringArgumentType.word())
@@ -35,7 +36,7 @@ public final class MemoryCommands {
                 .then(LiteralArgumentBuilder.<SharedSuggestionProvider>literal("import")
                         .then(RequiredArgumentBuilder.<SharedSuggestionProvider, String>argument("name", StringArgumentType.word())
                                 .suggests((command, builder) -> SharedSuggestionProvider.suggest(exports(), builder))
-                                .executes(command -> importFrom(StringArgumentType.getString(command, "name")))))));
+                                .executes(command -> importFrom(StringArgumentType.getString(command, "name"))))));
     }
 
     private static int export(String name) {
